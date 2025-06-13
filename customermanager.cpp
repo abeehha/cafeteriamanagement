@@ -78,7 +78,6 @@ void CustomerManager::registerCustomer() {
     char name[100], email[100];
     int preferenceChoice;
 
-    // Name validation
     bool validName = false;
     do {
         std::cout << "Enter customer name (minimum 2 characters): ";
@@ -98,7 +97,6 @@ void CustomerManager::registerCustomer() {
         }
     } while (!validName);
 
-    // Email validation
     bool validEmail = false;
     do {
         std::cout << "Enter email address: ";

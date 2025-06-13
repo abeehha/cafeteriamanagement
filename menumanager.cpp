@@ -17,8 +17,7 @@ MenuManager::~MenuManager() {
 void MenuManager::saveMenuToFile() {
     std::ofstream menuFile("menu.txt");
     if (!menuFile.is_open()) {
-        std::cout << "Error: Unable to open menu file for writing\n";
-        return;
+        throw std::runtime_error("Failed to open menu file for writing");
     }
 
     for (int i = 0; i < menu.size(); ++i) {
@@ -125,15 +124,15 @@ void MenuManager::addMenuItem() {
     std::cout << "Enter item price: ";
     while (!(std::cin >> price) || price <= 0) {
         std::cin.clear();
-        std::cin.ignore(10000, '\n');
+        std::cin.ignore();
         std::cout << "Invalid price. Please enter a positive number: ";
     }
 
     std::cout << "Enter item stock: ";
-    while (!(std::cin >> stock) || stock < 0) {
+    while (!(std::cin >> stock) || stock <= 0) {
         std::cin.clear();
-        std::cin.ignore(10000, '\n');
-        std::cout << "Invalid stock. Please enter a non-negative integer: ";
+        std::cin.ignore();
+        std::cout << "Invalid stock. Please enter valid stock amount: ";
     }
 
     std::cout << "Select category:\n"

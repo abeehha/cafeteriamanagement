@@ -2,26 +2,32 @@
 #define MENUMANAGER_H
 
 #include "MenuItem.h"
-#include "myvector.h"
+#include "MyVector.h"
 
 class MenuManager {
+private:
     MyVector<MenuItem*> menu;
 public:
-    void saveMenuToFile();
     void loadMenuFromFile();
+    void saveMenuToFile();
     void initializeDefaultMenu();
+
     MenuManager();
-    virtual ~MenuManager();
+    ~MenuManager();
+
     void addMenuItem();
     void removeMenuItem();
     void updateStock();
     void updatePrice();
+
     void displayMenuByCategory();
     void displayCompleteMenu();
     void displayMenuOptions();
+
     double handleCustomizations();
-    MyVector<MenuItem*>& getMenu();
     double getItemPrice(const AYstr& itemName) const;
+
+    MyVector<MenuItem*>& getMenu();
 };
 
 #endif

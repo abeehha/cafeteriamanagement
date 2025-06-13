@@ -8,6 +8,7 @@ class AYstr {
     int cap;
     char* Cs;
 public:
+    int strlength() const ;
     int strlength(const char* str);
     void regrow(int newcap);
     void strcpy(char* dest, const char* src);

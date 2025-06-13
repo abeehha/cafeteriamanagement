@@ -1,37 +1,43 @@
-#ifndef CAFETERIA_H
-#define CAFETERIA_H
-
+#pragma once
 #include "MenuManager.h"
 #include "CustomerManager.h"
-#include "Date.h"
 #include "SalesRecord.h"
-#include "myvector.h"
+#include "raylib.h"
 
 class Cafeteria {
 private:
+    double totalSales;
+    Date currentDate;
+    MyVector<SalesRecord> salesRecords;
     MenuManager menuManager;
     CustomerManager customerManager;
-    MyVector<SalesRecord> salesRecords;
-    Date currentDate;
-    double totalSales;
-
-    void suggestMenuItems(const Customer& customer);
-    void saveSalesRecord(const AYstr& itemName, int quantity, double price, const AYstr& customerName);
-    void loadSalesRecords();
-    void saveSalesRecordsToFile();
 
 public:
     Cafeteria();
+
+    // Menu management
+    void menuManagement();
     void displayMenu();
+
+    // Customer management
+    void customerManagement();
+    void suggestMenuItems(const Customer& customer);
+
+    // Order processing
     void placeOrder();
+
+    // Reporting
+    void displayReportingOptions();
     void generateDailySalesReport();
     void generateMonthlySalesReport();
     void generatePopularItemsReport();
-    void displayReportingOptions();
-    void menuManagement();
-    void customerManagement();
+
+    // Data handling
     void saveData();
     void displayOrderHistory();
-};
 
-#endif
+    // Sales records
+    void saveSalesRecord(const AYstr& itemName, int quantity, double price, const AYstr& customerName);
+    void loadSalesRecords();
+    void saveSalesRecordsToFile();
+};
