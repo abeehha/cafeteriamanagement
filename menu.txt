@@ -1,0 +1,8 @@
+Vegetarian,Veggie Burger,8.99,23
+Vegetarian,Veggie Wrap,7.49,20
+Vegan,Vegan Buddha Bowl,10.99,15
+Gluten-Free,Gluten-Free Margherita Pizza,11.49,10
+Specialty,Classic Cheeseburger,9.99,20
+Drinks,Iced Latte,4.29,30
+Gluten-Free,pasta,53,12
+Vegetarian,churros,45,0
