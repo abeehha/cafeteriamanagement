@@ -1,7 +1,13 @@
 #include "cafeteria.h"
 #include "payment.h"
+#include "date.h"
+#include "salesrecord.h"
+
 #include <iostream>
 #include <fstream>
+#include <iomanip>
+
+using namespace std;
 
 Cafeteria::Cafeteria() : totalSales(0.0) {
     currentDate = Date::getCurrentDate();
@@ -10,7 +16,7 @@ Cafeteria::Cafeteria() : totalSales(0.0) {
 void Cafeteria::suggestMenuItems(const Customer& customer) {
     AYstr preference = customer.getPreference();
     MyVector<AYstr> history = customer.getOrderHistory();
-
+    
     std::cout << "\n--- Personalized Suggestions ---\n";
 
     if (history.empty()) {
@@ -46,10 +52,23 @@ void Cafeteria::suggestMenuItems(const Customer& customer) {
 }
 
 void Cafeteria::saveSalesRecord(const AYstr& itemName, int quantity, double price, const AYstr& customerName) {
-    salesRecords.push_back(SalesRecord(itemName, customerName, quantity, price,
-        currentDate.getDay(), currentDate.getMonth(), currentDate.getYear()));
-}
+    Customer* customer = customerManager.findCustomerByName(customerName);
+    if (customer) {
+        salesrecords.push_back(SalesRecord(itemName, customerName, quantity, price,
+            currentDate.getDay(), currentDate.getMonth(), currentDate.getYear()));
 
+        
+        std::ofstream file("sales_records.txt", std::ios::app);
+        if (file.is_open()) {
+            file << currentDate.getFormattedDate().c_str() << ","
+                << itemName.c_str() << ","
+                << quantity << ","
+                << price << ","
+                << customerName.c_str() << "\n";
+            file.close();
+        }
+    }
+}
 void Cafeteria::loadSalesRecords() {
     std::ifstream file("sales_records.txt");
     if (!file.is_open()) return;
@@ -89,7 +108,7 @@ void Cafeteria::loadSalesRecords() {
         int quantity = quantityStr.strtoint(quantityStr.c_str());
         double price = priceStr.strtodouble(priceStr.c_str());
 
-        salesRecords.push_back(SalesRecord(itemName, customerName, quantity, price, day, month, year));
+        salesrecords.push_back(SalesRecord(itemName, customerName, quantity, price, day, month, year));
     }
     file.close();
 }
@@ -98,12 +117,12 @@ void Cafeteria::saveSalesRecordsToFile() {
     std::ofstream file("sales_records.txt");
     if (!file.is_open()) return;
 
-    for (int i = 0; i < salesRecords.size(); ++i) {
-        file << salesRecords[i].getDate().getFormattedDate().c_str() << ","
-            << salesRecords[i].getItemName().c_str() << ","
-            << salesRecords[i].getQuantity() << ","
-            << salesRecords[i].getUnitPrice() << ","
-            << salesRecords[i].getCustomerName().c_str() << "\n";
+    for (int i = 0; i < salesrecords.size(); ++i) {
+        file << salesrecords[i].getDate().getFormattedDate().c_str() << ","
+            << salesrecords[i].getItemName().c_str() << ","
+            << salesrecords[i].getQuantity() << ","
+            << salesrecords[i].getUnitPrice() << ","
+            << salesrecords[i].getCustomerName().c_str() << "\n";
     }
     file.close();
 }
@@ -111,25 +130,59 @@ void Cafeteria::saveSalesRecordsToFile() {
 void Cafeteria::displayMenu() {
     menuManager.displayCompleteMenu();
 }
-
 void Cafeteria::placeOrder() {
-    char name[100];
-    std::cout << "Enter customer name: ";
-    std::cin.ignore();
-    std::cin.getline(name, 100);
+    system("cls");
+    Customer* customer = nullptr;
+    char email[100], password[50];
+    int authChoice;
 
-    Customer* customer = customerManager.findCustomerByName(AYstr(name));
+  
+    do {
+        cout << "\n ________________________________________ ";
+        cout << "\n|          LOGIN/SIGNUP OPTIONS           |";
+        cout << "\n|----------------------------------------|";
+        cout << "\n|  1. LOGIN                              |";
+        cout << "\n|  2. SIGNUP                             |";
+        cout << "\n|  3. BACK TO MAIN MENU                  |";
+        cout << "\n|________________________________________|";
+        cout << "\n\nEnter your choice (1-3): ";
+        cin >> authChoice;
+
+        switch (authChoice) {
+        case 1: { 
+            cin.ignore();
+            cout << "Enter email: ";
+            cin.getline(email, 100);
+            cout << "Enter password: ";
+            cin.getline(password, 50);
+
+            customer = customerManager.authenticateCustomer(AYstr(email), AYstr(password));
+            if (!customer) {
+                cout << "Login failed. Invalid email or password.\n";
+            }
+            break;
+        }
+        case 2: { 
+            customerManager.registerCustomer();
+            
+            cout << "\nRegistration successful! Please login to place an order.\n";
+            break;
+        }
+        case 3: 
+            return;
+        default:
+            cout << "Invalid choice. Please try again.\n";
+        }
+    } while (!customer && authChoice != 3);
+
     if (!customer) {
-        std::cout << "Customer not found! Please register first.\n";
         return;
     }
 
+   
     suggestMenuItems(*customer);
-
-    
     menuManager.displayCompleteMenu();
 
-   
     struct OrderedItem {
         AYstr name;
         int quantity;
@@ -140,13 +193,14 @@ void Cafeteria::placeOrder() {
     MyVector<OrderedItem> orderedItems;
     double orderTotal = 0.0;
 
+   
     while (true) {
         int choice;
-        std::cout << "\nSelect menu item by number (0 to finish ordering): ";
-        while (!(std::cin >> choice) || choice < 0 || choice > menuManager.getMenu().size()) {
-            std::cin.clear();
-            std::cin.ignore(10000, '\n');
-            std::cout << "Invalid choice. Please enter a number between 0 and "
+        cout << "\nSelect menu item by number (0 to finish ordering): ";
+        while (!(cin >> choice) || choice < 0 || choice > menuManager.getMenu().size()) {
+            cin.clear();
+            cin.ignore(10000, '\n');
+            cout << "Invalid choice. Please enter a number between 0 and "
                 << menuManager.getMenu().size() << ": ";
         }
 
@@ -155,35 +209,29 @@ void Cafeteria::placeOrder() {
         }
 
         MenuItem* selectedItem = menuManager.getMenu()[choice - 1];
-
-       
-        std::cout << "\nSelected: ";
+        cout << "\nSelected: ";
         selectedItem->getName().print();
-        std::cout << " - $" << selectedItem->getPrice();
-        std::cout << " (" << selectedItem->getStock() << " available)\n";
+        cout << " - $" << selectedItem->getPrice();
+        cout << " (" << selectedItem->getStock() << " available)\n";
 
-        
         int quantity;
-        std::cout << "Enter quantity: ";
-        while (!(std::cin >> quantity) || quantity <= 0) {
-            std::cin.clear();
-            std::cin.ignore(10000, '\n');
-            std::cout << "Invalid quantity. Please enter a positive number: ";
+        cout << "Enter quantity: ";
+        while (!(cin >> quantity) || quantity <= 0) {
+            cin.clear();
+            cin.ignore(10000, '\n');
+            cout << "Invalid quantity. Please enter a positive number: ";
         }
 
-      
         if (!selectedItem->isAvailable(quantity)) {
-            std::cout << "Error: Only " << selectedItem->getStock()
+            cout << "Error: Only " << selectedItem->getStock()
                 << " available. Please choose a smaller quantity.\n";
             continue;
         }
 
-        
         double customizationCost = menuManager.handleCustomizations();
         double itemPrice = selectedItem->getPrice() + customizationCost;
         double itemTotal = itemPrice * quantity;
 
-       
         OrderedItem newItem;
         newItem.name = selectedItem->getName();
         newItem.quantity = quantity;
@@ -193,51 +241,55 @@ void Cafeteria::placeOrder() {
 
         selectedItem->setStock(selectedItem->getStock() - quantity);
 
-        std::cout << "Added to order: ";
+        cout << "Added to order: ";
         newItem.name.print();
-        std::cout << " x" << quantity << "  $" << itemPrice
+        cout << " x" << quantity << "  $" << itemPrice
             << " = $" << itemTotal << "\n";
     }
+
     if (orderedItems.empty()) {
-        std::cout << "No items selected. Order cancelled.\n";
+        cout << "No items selected. Order cancelled.\n";
         return;
     }
 
-   
-    std::cout << "\n--- Order Summary ---\n";
-    std::cout << "Customer: " << name << "\n";
-    std::cout << "Items:\n";
+  
+    cout << "\n--- Order Summary ---\n";
+    cout << "Customer: ";
+    customer->getName().print();
+    cout << "\nItems:\n";
 
     for (int i = 0; i < orderedItems.size(); ++i) {
-        std::cout << i + 1 << ". ";
+        cout << i + 1 << ". ";
         orderedItems[i].name.print();
-        std::cout << " x" << orderedItems[i].quantity
+        cout << " x" << orderedItems[i].quantity
             << " @ $" << orderedItems[i].unitPrice
             << " = $" << orderedItems[i].totalPrice << "\n";
         orderTotal += orderedItems[i].totalPrice;
     }
 
-    
+   
     double discount = 0.0;
-    if (customer->getLoyaltyPoints() >= 100) {
-        discount = orderTotal * 0.1; 
-        std::cout << "Loyalty discount applied: -$" << discount << "\n";
+    if (customer->getLoyaltyPoints() >= 5) {
+        discount = orderTotal * 0.1;
+        cout << "Loyalty discount applied: -$" << discount << "\n";
         customer->resetLoyaltyPoints();
     }
 
     double finalTotal = orderTotal - discount;
-    std::cout << "Subtotal: $" << orderTotal << "\n";
+    cout << "Subtotal: $" << orderTotal << "\n";
     if (discount > 0) {
-        std::cout << "Discount: -$" << discount << "\n";
+        cout << "Discount: -$" << discount << "\n";
     }
-    std::cout << "Total: $" << finalTotal << "\n";
+    cout << "Total: $" << finalTotal << "\n";
 
+   
     char confirm;
-    std::cout << "\nConfirm order (y/n)? ";
-    std::cin >> confirm;
+    cout << "\nConfirm order (y/n)? ";
+    cin >> confirm;
+    cin.ignore();
 
     if (tolower(confirm) != 'y') {
-       
+        
         for (int i = 0; i < orderedItems.size(); ++i) {
             for (int j = 0; j < menuManager.getMenu().size(); ++j) {
                 if (menuManager.getMenu()[j]->getName().isequal(orderedItems[i].name)) {
@@ -247,15 +299,18 @@ void Cafeteria::placeOrder() {
                 }
             }
         }
-        std::cout << "Order cancelled. Stock has been restored.\n";
+        cout << "Order cancelled. Stock has been restored.\n";
         return;
     }
+
+   
     bool paymentSuccessful = false;
     do {
         Payment::displayPaymentOptions();
-        std::cout << "Enter payment method (1-6): ";
+        cout << "Enter payment method (1-6): ";
         int paymentChoice;
-        std::cin >> paymentChoice;
+        cin >> paymentChoice;
+        cin.ignore();
 
         AYstr paymentMethod;
         switch (paymentChoice) {
@@ -266,15 +321,15 @@ void Cafeteria::placeOrder() {
         case 5: paymentMethod = "Bank Transfer"; break;
         case 6: paymentMethod = "Cash"; break;
         default:
-            std::cout << "Invalid payment method!\n";
+            cout << "Invalid payment method!\n";
             continue;
         }
 
         AYstr accountNumber;
         if (!paymentMethod.isequal("Cash")) {
             char accNum[20];
-            std::cout << "Enter account number: ";
-            std::cin >> accNum;
+            cout << "Enter account number: ";
+            cin.getline(accNum, 20);
             accountNumber = AYstr(accNum);
         }
 
@@ -282,23 +337,26 @@ void Cafeteria::placeOrder() {
         paymentSuccessful = payment.processPayment();
 
         if (!paymentSuccessful) {
-            std::cout << "Payment failed. Please try another method.\n";
+            cout << "Payment failed. Please try another method.\n";
         }
     } while (!paymentSuccessful);
 
- 
     for (int i = 0; i < orderedItems.size(); ++i) {
-       
         saveSalesRecord(orderedItems[i].name, orderedItems[i].quantity,
-            orderedItems[i].unitPrice, AYstr(name));
+            orderedItems[i].unitPrice, customer->getName());
 
-        
+       
         AYstr historyEntry = orderedItems[i].name + " x" + AYstr(orderedItems[i].quantity) +
             " @ $" + AYstr(orderedItems[i].unitPrice);
         customer->addOrderToHistory(historyEntry);
-    }
 
-   
+        
+        std::ofstream historyFile("order_history.txt", std::ios::app);
+        if (historyFile.is_open()) {
+            historyFile << customer->getId() << "," << historyEntry.c_str() << "\n";
+            historyFile.close();
+        }
+    }
     int pointsEarned = static_cast<int>(finalTotal / 10);
     customer->addLoyaltyPoints(pointsEarned);
 
@@ -306,58 +364,221 @@ void Cafeteria::placeOrder() {
     menuManager.saveMenuToFile();
     saveSalesRecordsToFile();
 
-    std::cout << "\nOrder placed successfully!\n";
-    std::cout << "Earned " << pointsEarned << " loyalty points.\n";
-    std::cout << "Total loyalty points: " << customer->getLoyaltyPoints() << "\n";
+    cout << "\nOrder placed successfully!\n";
+    cout << "Earned " << pointsEarned << " loyalty points.\n";
+    cout << "Total loyalty points: " << customer->getLoyaltyPoints() << "\n";
 }
 void Cafeteria::generateDailySalesReport() {
-    double dailyTotal = 0.0;
-    std::cout << "\nDaily Sales Report for ";
-    currentDate.getFormattedDate().print();
-    std::cout << "\n";
 
-    for (int i = 0; i < salesRecords.size(); ++i) {
-        if (salesRecords[i].isSameDate(currentDate.getDay(), currentDate.getMonth(), currentDate.getYear())) {
-            salesRecords[i].print();
-            dailyTotal += salesRecords[i].getTotal();
+    Date cdate =Date::getCurrentDate();
+   
+    cout << "Daily Sales Report for ";
+    cdate.getFormattedDate().print();
+
+    double dailyTotal = 0.0;
+    int orderCount = 0;
+
+    MyVector<AYstr> itemNames;
+    MyVector<int> itemQuantities;
+    MyVector<double> itemRevenues;
+
+
+    for (int i = 0; i < salesrecords.size(); ++i) {
+        if (salesrecords[i].isSameDate(cdate.getDay(), cdate.getMonth(), cdate.getYear())) {
+            dailyTotal += salesrecords[i].getTotal();
+            orderCount++;
+
+            bool itemFound = false;
+            for (int j = 0; j < itemNames.size(); ++j) {
+                if (itemNames[j].isequal(salesrecords[i].getItemName())) {
+                    itemQuantities[j] += salesrecords[i].getQuantity();
+                    itemRevenues[j] += salesrecords[i].getTotal();
+                    itemFound = true;
+                    break;
+                }
+            }
+
+            if (!itemFound) {
+                itemNames.push_back(salesrecords[i].getItemName());
+                itemQuantities.push_back(salesrecords[i].getQuantity());
+                itemRevenues.push_back(salesrecords[i].getTotal());
+            }
         }
     }
+    cout << "\nSUMMARY:\n";
+    cout << "--------\n";
+    cout << left << setw(25) << "Total Orders:" << right << setw(15) << orderCount << endl;
+    cout << left << setw(25) << "Total Revenue:" << "$" << right << setw(14) << fixed << setprecision(2) << dailyTotal << endl;
 
-    std::cout << "Total Daily Sales: $" << dailyTotal << "\n";
+    if (orderCount == 0) {
+        cout << "\nNo sales recorded for today.\n";
+        return;
+    }
+
+    cout << left << setw(25) << "Average Order Value:" << "$" << right << setw(14) << dailyTotal / orderCount << endl;
+
+   
+    cout << "\nITEM-WISE SALES:\n";
+    cout << "-----------------------------------------------------------\n";
+    cout << left << setw(30) << "Item Name"
+        << right << setw(10) << "Qty"
+        << right << setw(15) << "Revenue" << endl;
+    cout << "-----------------------------------------------------------\n";
+
+    for (int i = 0; i < itemNames.size(); ++i) {
+        cout << left << setw(30) << itemNames[i].c_str()
+            << right << setw(10) << itemQuantities[i]
+            << right << setw(15) << fixed << setprecision(2) << itemRevenues[i] << endl;
+    }
 }
 
 void Cafeteria::generateMonthlySalesReport() {
-    double monthlyTotal = 0.0;
-    std::cout << "\nMonthly Sales Report for ";
+    cout << "Monthly Sales Report for ";
     currentDate.getMonthName().print();
-    std::cout << "\n";
+    cout << " " << currentDate.getYear() << "\n";
+    double monthlyTotal = 0.0;
+    int orderCount = 0;
 
-    for (int i = 0; i < salesRecords.size(); ++i) {
-        if (salesRecords[i].isSameDate(0, currentDate.getMonth(), currentDate.getYear())) {
-            salesRecords[i].print();
-            monthlyTotal += salesRecords[i].getTotal();
+    MyVector<AYstr> uniqueCustomers;
+
+    MyVector<AYstr> itemNames;
+    MyVector<int> itemQuantities;
+    MyVector<double> itemRevenues;
+    MyVector<int> days;
+    MyVector<double> dailyTotals;
+
+    for (int i = 0; i < salesrecords.size(); ++i) {
+        if (salesrecords[i].isSameMonth(currentDate.getMonth(), currentDate.getYear())) {
+            monthlyTotal += salesrecords[i].getTotal();
+            orderCount++;
+
+            bool customerExists = false;
+            for (int j = 0; j < uniqueCustomers.size(); ++j) {
+                if (uniqueCustomers[j].isequal(salesrecords[i].getCustomerName())) {
+                    customerExists = true;
+                    break;
+                }
+            }
+            if (!customerExists) {
+                uniqueCustomers.push_back(salesrecords[i].getCustomerName());
+            }
+               bool itemFound = false;
+            for (int j = 0; j < itemNames.size(); ++j) {
+                if (itemNames[j].isequal(salesrecords[i].getItemName())) {
+                    itemQuantities[j] += salesrecords[i].getQuantity();
+                    itemRevenues[j] += salesrecords[i].getTotal();
+                    itemFound = true;
+                    break;
+                }
+            }
+            if (!itemFound) {
+                itemNames.push_back(salesrecords[i].getItemName());
+                itemQuantities.push_back(salesrecords[i].getQuantity());
+                itemRevenues.push_back(salesrecords[i].getTotal());
+            }
+            int day = salesrecords[i].getDate().getDay();
+            bool dayFound = false;
+            for (int j = 0; j < days.size(); ++j) {
+                if (days[j] == day) {
+                    dailyTotals[j] += salesrecords[i].getTotal();
+                    dayFound = true;
+                    break;
+                }
+            }
+            if (!dayFound) {
+                days.push_back(day);
+                dailyTotals.push_back(salesrecords[i].getTotal());
+            }
         }
     }
 
-    std::cout << "Total Monthly Sales: $" << monthlyTotal << "\n";
-}
+    cout << "\nSummary:\n";
+    cout << "--------\n";
+    cout << "Total Orders: " << orderCount << endl;
+    cout << "Total Revenue: $" << fixed << setprecision(2) << monthlyTotal << endl;
+    cout << "Unique Customers: " << uniqueCustomers.size() << endl;
 
+    if (orderCount == 0) {
+        cout << "\nNo sales recorded for this month.\n";
+        return;
+    }
+
+    cout << "Average Order Value: $" << monthlyTotal / orderCount << endl;
+    for (int i = 0; i < itemNames.size() - 1; ++i) {
+        for (int j = 0; j < itemNames.size() - i - 1; ++j) {
+            if (itemRevenues[j] < itemRevenues[j + 1]) {
+                AYstr tempName = itemNames[j];
+                itemNames[j] = itemNames[j + 1];
+                itemNames[j + 1] = tempName;
+
+                int tempQty = itemQuantities[j];
+                itemQuantities[j] = itemQuantities[j + 1];
+                itemQuantities[j + 1] = tempQty;
+
+                double tempRev = itemRevenues[j];
+                itemRevenues[j] = itemRevenues[j + 1];
+                itemRevenues[j + 1] = tempRev;
+            }
+        }
+    }
+
+    cout << "\nTOP SELLING ITEMS:\n";
+    cout << "----------------------------------------------------\n";
+    cout << left << setw(30) << "Item Name"
+        << right << setw(10) << "Qty"
+        << right << setw(15) << "Revenue" << endl;
+    cout << "-----------------------------------------------------\n";
+
+    int displayCount = min(5, itemNames.size());
+    for (int i = 0; i < displayCount; ++i) {
+        cout << left << setw(30) << itemNames[i].c_str()
+            << right << setw(10) << itemQuantities[i]
+            << right << setw(15) << fixed << setprecision(2) << itemRevenues[i] << endl;
+    }
+    for (int i = 0; i < days.size() - 1; ++i) {
+        for (int j = 0; j < days.size() - i - 1; ++j) {
+            if (days[j] > days[j + 1]) {
+               
+                int tempDay = days[j];
+                days[j] = days[j + 1];
+                days[j + 1] = tempDay;
+
+               
+                double tempTotal = dailyTotals[j];
+                dailyTotals[j] = dailyTotals[j + 1];
+                dailyTotals[j + 1] = tempTotal;
+            }
+        }
+    }
+
+    
+    cout << "\nDaily Breakdown:\n";
+    cout << "---------------\n";
+    cout << setw(10) << left << "Day"
+        << setw(15) << right << "Revenue" << endl;
+    cout << string(25, '-') << endl;
+
+    for (int i = 0; i < days.size(); ++i) {
+        cout << setw(10) << left << days[i]
+            << setw(15) << right << fixed << setprecision(2) << dailyTotals[i] << endl;
+    }
+}
 void Cafeteria::generatePopularItemsReport() {
     MyVector<AYstr> itemNames;
     MyVector<int> itemCounts;
 
-    for (int i = 0; i < salesRecords.size(); ++i) {
+    for (int i = 0; i < salesrecords.size(); ++i) {
         bool found = false;
         for (int j = 0; j < itemNames.size(); ++j) {
-            if (itemNames[j].isequal(salesRecords[i].getItemName())) {
-                itemCounts[j] += salesRecords[i].getQuantity();
+            if (itemNames[j].isequal(salesrecords[i].getItemName())) {
+                itemCounts[j] += salesrecords[i].getQuantity();
                 found = true;
                 break;
             }
         }
         if (!found) {
-            itemNames.push_back(salesRecords[i].getItemName());
-            itemCounts.push_back(salesRecords[i].getQuantity());
+            itemNames.push_back(salesrecords[i].getItemName());
+            itemCounts.push_back(salesrecords[i].getQuantity());
         }
     }
     for (int i = 0; i < itemNames.size() - 1; ++i) {
@@ -383,13 +604,17 @@ void Cafeteria::generatePopularItemsReport() {
 
 void Cafeteria::displayReportingOptions() {
     int choice;
+    system("cls");
     do {
-        std::cout << "\n--- Reporting Options ---\n";
-        std::cout << "1. Daily Sales Report\n";
-        std::cout << "2. Monthly Sales Report\n";
-        std::cout << "3. Popular Items Report\n";
-        std::cout << "4. Back to Main Menu\n";
-        std::cout << "Enter choice: ";
+        cout << "\n ________________________________________ ";
+        cout << "\n|          REPORTING OPTIONS             |";
+        cout << "\n|----------------------------------------|";
+        cout << "\n|  1. DAILY SALES REPORT                 |";
+        cout << "\n|  2. MONTHLY SALES REPORT               |";
+        cout << "\n|  3. POPULAR ITEMS REPORT               |";
+        cout << "\n|  4. BACK TO MAIN MENU                  |";
+        cout << "\n|________________________________________|";
+        cout << "\n\nEnter your choice (1-4): ";
         std::cin >> choice;
 
         switch (choice) {
@@ -403,28 +628,8 @@ void Cafeteria::displayReportingOptions() {
 }
 
 void Cafeteria::menuManagement() {
+    system("cls");
     menuManager.displayMenuOptions();
-}
-
-void Cafeteria::customerManagement() {
-    int choice;
-    do {
-        std::cout << "\n--- Customer Management ---\n";
-        std::cout << "1. Register Customer\n";
-        std::cout << "2. Update Customer Info\n";
-        std::cout << "3. View Order History\n";
-        std::cout << "4. Back to Main Menu\n";
-        std::cout << "Enter choice: ";
-        std::cin >> choice;
-
-        switch (choice) {
-        case 1: customerManager.registerCustomer(); break;
-        case 2: customerManager.updateCustomerInfo(); break;
-        case 3: customerManager.displayOrderHistory(); break;
-        case 4: break;
-        default: std::cout << "Invalid choice!\n";
-        }
-    } while (choice != 4);
 }
 
 void Cafeteria::saveData() {
@@ -433,5 +638,85 @@ void Cafeteria::saveData() {
     saveSalesRecordsToFile();
 }
 void Cafeteria::displayOrderHistory() {
+    system("cls");
     customerManager.displayOrderHistory();
+}
+void Cafeteria::customerManagement() {
+    int choice;
+    system("cls");
+    do {
+        cout << "\n ________________________________________ ";
+        cout << "\n|       CUSTOMER MANAGEMENT SYSTEM       |";
+        cout << "\n|----------------------------------------|";
+        cout << "\n|  1. VIEW ALL CUSTOMERS                 |";
+        cout << "\n|  2. VIEW CUSTOMER DETAILS              |";
+        cout << "\n|  3. REMOVE CUSTOMER                    |";
+        cout << "\n|  4. BACK TO ADMIN MENU                 |";
+        cout << "\n|________________________________________|";
+        cout << "\n\nEnter your choice (1-4): ";
+        cin >> choice;
+
+        switch (choice) {
+        case 1: displayAllCustomers(); break;
+        case 2: viewCustomerDetails(); break;
+        case 3: removeCustomer(); break;
+        case 4: break;
+        default: cout << "Invalid choice!\n";
+        }
+    } while (choice != 4);
+}
+
+void Cafeteria::displayAllCustomers() {
+    for (int i = 0; i < customerManager.customers.size(); ++i) {
+        Customer& c = customerManager.customers[i];
+        cout << "ID: " << c.getId() << " | Name: " << c.getName().c_str()
+            << " | Email: " << c.getEmail().c_str()
+            << " | Orders: " << c.getOrderHistory().size() << endl;
+    }
+}
+
+void Cafeteria::viewCustomerDetails() {
+    char name[100];
+    cout << "Enter customer name: ";
+    cin.ignore();
+    cin.getline(name, 100);
+
+    Customer* c = customerManager.findCustomerByName(AYstr(name));
+    if (!c) {
+        cout << "Customer not found!\n";
+        return;
+    }
+
+    cout << "\n--- CUSTOMER DETAILS ---\n";
+    cout << "ID: " << c->getId() << endl;
+    cout << "Name: " << c->getName().c_str() << endl;
+    cout << "Email: " << c->getEmail().c_str() << endl;
+    cout << "Phone: " << c->getPhone().c_str() << endl;
+    cout << "Address: " << c->getAddress().c_str() << endl;
+    cout << "Dietary Preference: " << c->getPreference().c_str() << endl;
+    cout << "Loyalty Points: " << c->getLoyaltyPoints() << endl;
+    cout << "Total Orders: " << c->getOrderHistory().size() << endl;
+
+    cout << "\nOrder History:\n";
+    MyVector<AYstr> history = c->getOrderHistory();
+    for (int i = 0; i < history.size(); ++i) {
+        cout << i + 1 << ". " << history[i].c_str() << endl;
+    }
+}
+
+void Cafeteria::removeCustomer() {
+    char name[100];
+    cout << "Enter customer name to remove: ";
+    cin.ignore();
+    cin.getline(name, 100);
+
+    for (int i = 0; i < customerManager.customers.size(); ++i) {
+        if (customerManager.customers[i].getName().isequal(AYstr(name))) {
+            customerManager.customers.erase_at(i);
+            cout << "Customer removed successfully.\n";
+            customerManager.saveAllCustomerData();
+            return;
+        }
+    }
+    cout << "Customer not found!\n";
 }

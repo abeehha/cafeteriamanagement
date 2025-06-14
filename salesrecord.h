@@ -24,6 +24,7 @@ public:
     float getTotal() const;
     const Date& getDate() const;
     bool isSameDate(int d, int m, int y) const;
+    bool isSameMonth(int m, int y) const;
 };
 
 

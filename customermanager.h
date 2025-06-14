@@ -5,13 +5,11 @@
 #include "myvector.h"
 
 class CustomerManager {
-protected:
+public:
     MyVector<Customer> customers;
 
     void loadCustomersFromFile();
     void loadOrderHistoryFromFile();
-
-public:
     CustomerManager();
     void registerCustomer();
     Customer* findCustomerByName(const AYstr& name);
@@ -19,7 +17,7 @@ public:
     void saveAllCustomerData();
     void updateCustomerInfo();
     void displayOrderHistory();
-    MyVector<Customer>& getCustomers();
+    Customer* authenticateCustomer(const AYstr& email, const AYstr& password);
 };
 
 #endif

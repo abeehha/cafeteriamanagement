@@ -1,0 +1,13 @@
+12-6-2025,pasta,1,53,abeeha
+13-6-2025,pasta,1,53,abeeha
+13-6-2025,churros,1,45,abeeha
+13-6-2025,pasta,2,53.5,abeeha
+13-6-2025,churros,3,45,abeeha
+13-6-2025,Classic Cheeseburger,1,10.49,abeeha
+14-6-2025,Classic Cheeseburger,10,10.49,umer
+14-6-2025,Lentil Soup,2,8.11,anish
+14-6-2025,Gluten-Free Margherita Pizza,1,11.49,abeeha
+14-6-2025,Spinach Lasagna,1,19.17,abeeha
+14-6-2025,Double Beef Burger,2,8.21,abeeha
+14-6-2025,Double Beef Burger,1,7.71,abeeha
+14-6-2025,Gluten-Free Margherita Pizza,1,11.99,abeeha

@@ -19,11 +19,10 @@ public:
     void removeMenuItem();
     void updateStock();
     void updatePrice();
-
     void displayMenuByCategory();
     void displayCompleteMenu();
-    void displayMenuOptions();
 
+    void displayMenuOptions();
     double handleCustomizations();
     double getItemPrice(const AYstr& itemName) const;
 

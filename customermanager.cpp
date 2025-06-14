@@ -7,62 +7,22 @@ CustomerManager::CustomerManager() {
     loadOrderHistoryFromFile();
 }
 
-void CustomerManager::loadCustomersFromFile() {
-    std::ifstream customerFile("customers.txt");
-    if (!customerFile.is_open()) {
-        std::cout << "Warning: Could not open customers.txt - starting with empty customer list\n";
-        return;
-    }
-
-    AYstr line;
-    char buffer[256];
-    while (customerFile.getline(buffer, 256)) {
-        line = buffer;
-
-        int idStart = line.find_first("ID: ") + 4;
-        int idEnd = line.find_first(',', idStart);
-        AYstr idStr = line.substring(idStart, idEnd - idStart);
-        int id = idStr.strtoint(idStr.c_str());
-
-        int nameStart = line.find_first("Name: ", idEnd) + 6;
-        int nameEnd = line.find_first(',', nameStart);
-        AYstr name = line.substring(nameStart, nameEnd - nameStart).trim();
-
-        int emailStart = line.find_first("Email: ", nameEnd) + 7;
-        int emailEnd = line.find_first(',', emailStart);
-        AYstr email = line.substring(emailStart, emailEnd - emailStart).trim();
-
-        int prefStart = line.find_first("Dietary Preference: ", emailEnd) + 19;
-        int prefEnd = line.find_first(',', prefStart);
-        AYstr preference = line.substring(prefStart, prefEnd - prefStart).trim();
-
-        int pointsStart = line.find_first("Loyalty Points: ", prefEnd) + 16;
-        AYstr pointsStr = line.substring(pointsStart, line.strlength(line.c_str()) - pointsStart).trim();
-        double points = pointsStr.strtodouble(pointsStr.c_str());
-
-        customers.push_back(Customer(name, email, preference, points, id));
-    }
-    customerFile.close();
-}
-
 void CustomerManager::loadOrderHistoryFromFile() {
     std::ifstream orderFile("order_history.txt");
     if (!orderFile.is_open()) {
         return;
     }
 
-    AYstr line;
     char buffer[256];
     while (orderFile.getline(buffer, 256)) {
-        line = buffer;
-
+        AYstr line(buffer);
         int commaPos = line.find_first(',');
         if (commaPos == -1) continue;
 
         AYstr idStr = line.substring(0, commaPos);
         int customerId = idStr.strtoint(idStr.c_str());
 
-        AYstr orderItem = line.substring(commaPos + 1, line.strlength(line.c_str()) - commaPos - 1).trim();
+        AYstr orderItem = line.substring(commaPos + 1, line.strlength() - commaPos - 1).trim();
 
         for (int i = 0; i < customers.size(); ++i) {
             if (customers[i].getId() == customerId) {
@@ -73,15 +33,18 @@ void CustomerManager::loadOrderHistoryFromFile() {
     }
     orderFile.close();
 }
-
 void CustomerManager::registerCustomer() {
     char name[100], email[100];
+    char phone[20], address[100], password[50];
+    int id;
+    double points;
     int preferenceChoice;
 
+    std::cin.ignore();
     bool validName = false;
     do {
+
         std::cout << "Enter customer name (minimum 2 characters): ";
-        std::cin.ignore();
         std::cin.getline(name, 100);
 
         AYstr nameStr(name);
@@ -114,6 +77,82 @@ void CustomerManager::registerCustomer() {
         }
     } while (!validEmail);
 
+    bool validPhone = false;
+    do {
+        std::cout << "Enter phone number (11 digits, starting with 03): ";
+        std::cin.getline(phone, 20);
+
+        AYstr phoneStr(phone);
+        if (phoneStr.strlength() != 11) {
+            std::cout << "Error: Phone number must be exactly 11 digits\n";
+        }
+        else if (!phoneStr.isequal("03") && phoneStr.substring(0, 2).find_first("03") != 0) {
+            std::cout << "Error: Phone number must start with '03'\n";
+        }
+        else {
+            bool allDigits = true;
+            for (int i = 0; i < phoneStr.strlength(); i++) {
+                if (phoneStr[i] < '0' || phoneStr[i] > '9') {
+                    allDigits = false;
+                    break;
+                }
+            }
+            if (!allDigits) {
+                std::cout << "Error: Phone number must contain only digits\n";
+            }
+            else {
+                validPhone = true;
+            }
+        }
+    } while (!validPhone);
+
+    bool validAddress = false;
+    do {
+        std::cout << "Enter address (minimum 10 characters): ";
+        std::cin.getline(address, 100);
+
+        AYstr addressStr(address);
+        if (addressStr.strlength() < 10) {
+            std::cout << "Error: Address must be at least 10 characters long\n";
+        }
+        else {
+            validAddress = true;
+        }
+    } while (!validAddress);
+
+    bool validPassword = false;
+    do {
+        std::cout << "Create password (8-20 characters, at least 1 uppercase, 1 lowercase, 1 digit): ";
+        std::cin.getline(password, 50);
+
+        AYstr passwordStr(password);
+        if (passwordStr.strlength() < 8 || passwordStr.strlength() > 20) {
+            std::cout << "Error: Password must be between 8-20 characters\n";
+            continue;
+        }
+
+        bool hasUpper = false, hasLower = false, hasDigit = false;
+        for (int i = 0; i < passwordStr.strlength(); i++) {
+            char c = passwordStr[i];
+            if (c >= 'A' && c <= 'Z') hasUpper = true;
+            else if (c >= 'a' && c <= 'z') hasLower = true;
+            else if (c >= '0' && c <= '9') hasDigit = true;
+        }
+
+        if (!hasUpper) {
+            std::cout << "Error: Password must contain at least 1 uppercase letter\n";
+        }
+        else if (!hasLower) {
+            std::cout << "Error: Password must contain at least 1 lowercase letter\n";
+        }
+        else if (!hasDigit) {
+            std::cout << "Error: Password must contain at least 1 digit\n";
+        }
+        else {
+            validPassword = true;
+        }
+    } while (!validPassword);
+
     std::cout << "\nSelect dietary preference:\n"
         << "1. Vegetarian\n"
         << "2. Vegan\n"
@@ -129,8 +168,15 @@ void CustomerManager::registerCustomer() {
     case 3: preference = "Gluten-Free"; break;
     default: preference = "None"; break;
     }
+    customers.push_back(Customer(
+        AYstr(name),
+        AYstr(email),
+        AYstr(phone),
+        AYstr(address),
+        preference,
+        AYstr(password) 
+    ));
 
-    customers.push_back(Customer(AYstr(name), AYstr(email), preference));
     saveCustomerToFile(customers.back());
 
     std::cout << "\nCustomer Registration Successful\n"
@@ -144,39 +190,45 @@ void CustomerManager::registerCustomer() {
 }
 
 Customer* CustomerManager::findCustomerByName(const AYstr& name) {
+    AYstr searchName = name;
+    searchName.ToLower();  
+    searchName.trim();     
     for (int i = 0; i < customers.size(); ++i) {
-        if (customers[i].getName().isequal(name)) {
+        AYstr customerName = customers[i].getName();
+        customerName.ToLower();  
+        customerName.trim();     
+
+        if (customerName.isequal(searchName)) {
             return &customers[i];
         }
     }
-    return nullptr;
-}
+    for (int i = 0; i < customers.size(); ++i) {
+        AYstr customerName = customers[i].getName();
+        customerName.ToLower(); 
+        customerName.trim();     
 
-void CustomerManager::saveCustomerToFile(const Customer& customer) {
-    std::ofstream customerFile("customers.txt", std::ios::app);
-    if (customerFile.is_open()) {
-        customerFile << "ID: " << customer.getId()
-            << ", Name: " << customer.getName().c_str()
-            << ", Email: " << customer.getEmail().c_str()
-            << ", Dietary Preference: " << customer.getPreference().c_str()
-            << ", Loyalty Points: " << customer.getLoyaltyPoints() << "\n";
-        customerFile.close();
-    }
-}
-
-void CustomerManager::saveAllCustomerData() {
-    std::ofstream customerFile("customers.txt");
-    if (customerFile.is_open()) {
-        for (int i = 0; i < customers.size(); ++i) {
-            customerFile << "ID: " << customers[i].getId()
-                << ", Name: " << customers[i].getName().c_str()
-                << ", Email: " << customers[i].getEmail().c_str()
-                << ", Dietary Preference: " << customers[i].getPreference().c_str()
-                << ", Loyalty Points: " << customers[i].getLoyaltyPoints() << "\n";
+        if (customerName.find_first(searchName) != -1) {
+            return &customers[i];
         }
-        customerFile.close();
     }
-    Customer::saveIdCounter();
+    int spacePos = searchName.find_first(' ');
+    if (spacePos != -1) {
+        AYstr firstName = searchName.substring(0, spacePos);
+        AYstr lastName = searchName.substring(spacePos + 1, searchName.strlength() - spacePos - 1);
+
+        for (int i = 0; i < customers.size(); ++i) {
+            AYstr customerName = customers[i].getName();
+            customerName.ToLower();  
+            customerName.trim();     
+
+            if (customerName.find_first(firstName) != -1 ||
+                customerName.find_first(lastName) != -1) {
+                return &customers[i];
+            }
+        }
+    }
+
+    return nullptr;
 }
 
 void CustomerManager::updateCustomerInfo() {
@@ -261,23 +313,106 @@ void CustomerManager::displayOrderHistory() {
 
     Customer* customer = findCustomerByName(AYstr(name));
     if (!customer) {
-        std::cout << "\nError: Customer not found!\n";
+        std::cout << "\nError: Customer not found! Please check the name or register first.\n";
         return;
     }
 
-    MyVector<AYstr> orderHistory = customer->getOrderHistory();
+    if (customer->getOrderHistory().empty()) {
+        std::cout << "\nNo order history found for ";
+        customer->getName().print();
+        std::cout << "\n";
+        return;
+    }
+
     std::cout << "\nOrder History for ";
     customer->getName().print();
     std::cout << ":\n";
 
-    if (orderHistory.empty()) {
-        std::cout << "No orders found.\n";
+    for (int i = 0; i < customer->getOrderHistory().size(); ++i) {
+        std::cout << i + 1 << ". ";
+        customer->getOrderHistory()[i].print();
+        std::cout << "\n";
+    }
+}
+Customer* CustomerManager::authenticateCustomer(const AYstr& email, const AYstr& password) {
+    for (int i = 0; i < customers.size(); ++i) {
+        if (customers[i].getEmail().isequal(email) &&
+            customers[i].getPassword().isequal(password)) {
+            return &customers[i];
+        }
+    }
+    return nullptr;
+}
+void CustomerManager::loadCustomersFromFile() {
+    std::ifstream customerFile("customers.txt");
+    if (!customerFile.is_open()) {
+        std::cout << "Warning: Could not open customers.txt - starting with empty customer list\n";
         return;
     }
 
-    for (int i = 0; i < orderHistory.size(); ++i) {
-        std::cout << i + 1 << ". ";
-        orderHistory[i].print();
-        std::cout << "\n";
+    char buffer[256];
+    while (customerFile.getline(buffer, 256)) {
+        AYstr line(buffer);
+        int commaPos[7];
+        int pos = 0;
+        for (int i = 0; i < 7; i++) {
+            pos = line.find_first(',', pos);
+            if (pos == -1) break;
+            commaPos[i] = pos;
+            pos++;
+        }
+
+        if (commaPos[0] == -1 || commaPos[1] == -1 || commaPos[2] == -1 ||
+            commaPos[3] == -1 || commaPos[4] == -1 || commaPos[5] == -1 || commaPos[6] == -1) {
+            continue;
+        } 
+        AYstr idStr = line.substring(0, commaPos[0]);
+        int id = idStr.strtoint(idStr.c_str());
+
+        AYstr name = line.substring(commaPos[0] + 1, commaPos[1] - commaPos[0] - 1).trim();
+        AYstr email = line.substring(commaPos[1] + 1, commaPos[2] - commaPos[1] - 1).trim();
+        AYstr phone = line.substring(commaPos[2] + 1, commaPos[3] - commaPos[2] - 1).trim();
+        AYstr address = line.substring(commaPos[3] + 1, commaPos[4] - commaPos[3] - 1).trim();
+        AYstr preference = line.substring(commaPos[4] + 1, commaPos[5] - commaPos[4] - 1).trim();
+        AYstr password = line.substring(commaPos[5] + 1, commaPos[6] - commaPos[5] - 1).trim();
+        AYstr pointsStr = line.substring(commaPos[6] + 1, line.strlength(line.c_str()) - commaPos[6] - 1).trim();
+        double points = pointsStr.strtodouble(pointsStr.c_str());
+
+        customers.push_back(Customer(name, email, phone, address, preference, password, points, id));
+    }
+    customerFile.close();
+}
+
+void CustomerManager::saveAllCustomerData() {
+    std::ofstream customerFile("customers.txt");
+    if (customerFile.is_open()) {
+        for (int i = 0; i < customers.size(); ++i) {
+            Customer& c = customers[i];
+            customerFile << c.getId() << ","
+                << c.getName().c_str() << ","
+                << c.getEmail().c_str() << ","
+                << c.getPhone().c_str() << ","
+                << c.getAddress().c_str() << ","
+                << c.getPreference().c_str() << ","
+                << c.getPassword().c_str() << ","
+                << c.getLoyaltyPoints() << "\n";
+        }
+        customerFile.close();
+    }
+    Customer::saveIdCounter();
+}
+
+void CustomerManager::saveCustomerToFile(const Customer& customer) {
+    std::ofstream customerFile("customers.txt", std::ios::app);
+    if (customerFile.is_open()) {
+        customerFile << customer.getId() << ","
+            << customer.getName().c_str() << ","
+            << customer.getEmail().c_str() << ","
+            << customer.getPhone().c_str() << ","
+            << customer.getAddress().c_str() << ","
+            << customer.getPreference().c_str() << ","
+            << customer.getPassword().c_str() << ","
+            << customer.getLoyaltyPoints() << "\n";
+        customerFile.close();
     }
 }

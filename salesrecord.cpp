@@ -30,3 +30,6 @@ const Date& SalesRecord::getDate() const {
 bool SalesRecord::isSameDate(int d, int m, int y) const {
     return date.getDay() == d && date.getMonth() == m && date.getYear() == y;
 }
+bool SalesRecord::isSameMonth(int m, int y) const {
+    return date.getMonth() == m && date.getYear() == y;
+}

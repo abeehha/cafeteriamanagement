@@ -68,9 +68,11 @@ public:
     }
 
     T& operator[](int index) {
-        static T dummy = T();
-        if (index < 0 || index >= currentSize) return dummy;
+        if (index < 0 || index >= currentSize) {
+            throw std::out_of_range("Index out of bounds");
+        }
         return data[index];
+
     }
 
     const T& operator[](int index) const {

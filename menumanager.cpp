@@ -316,16 +316,19 @@ void MenuManager::displayCompleteMenu() {
 void MenuManager::displayMenuOptions() {
     int choice;
     do {
-        std::cout << "\n--- Menu Management System ---\n"
-            << "1. Add Menu Item\n"
-            << "2. Remove Menu Item\n"
-            << "3. Update Stock\n"
-            << "4. Update Price\n"
-            << "5. Display Menu by Category\n"
-            << "6. Display Complete Menu\n"
-            << "7. Back to Main Menu\n"
-            << "Enter your choice: ";
-        std::cin >> choice;
+        cout << "\n ________________________________________ ";
+        cout << "\n|          MENU MANAGEMENT               |";
+        cout << "\n|----------------------------------------|";
+        cout << "\n|  1. ADD MENU ITEM                      |";
+        cout << "\n|  2. REMOVE MENU ITEM                   |";
+        cout << "\n|  3. UPDATE STOCKS                      |";
+        cout << "\n|  4. UPDATE PRICE                       |";
+        cout << "\n|  5. DISPLAY MENU BY CATEGORY           | ";
+        cout << "\n|  6. DISPLAY COMPLETE MENU              | ";
+        cout << "\n|  7. BACK TO MAIN MENU                  | ";
+        cout << "\n|________________________________________|";
+        cout << "\n\nEnter your choice (1-7): ";
+        cin >> choice;
 
         switch (choice) {
         case 1: addMenuItem(); break;

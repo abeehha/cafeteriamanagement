@@ -2,8 +2,17 @@
 #include <iostream>
 
 using namespace std;
+const AYstr ADMIN_PASSWORD = "admin123";
+
+bool checkAdminPassword() {
+    char input[100];
+    cout << "Enter admin password: ";
+    cin.getline(input, 100);
+    return AYstr(input).isequal(ADMIN_PASSWORD);
+}
 
 void displayMainMenu() {
+    system("cls");
     cout << "\n ________________________________________ ";
     cout << "\n|      WELCOME TO BEAN N BYTE CAFE       |";
     cout << "\n|----------------------------------------|";
@@ -15,6 +24,7 @@ void displayMainMenu() {
 }
 
 void displayAdminMenu() {
+    system("cls");
     cout << "\n ________________________________________ ";
     cout << "\n|          ADMINISTRATOR MENU            |";
     cout << "\n|----------------------------------------|";
@@ -27,15 +37,15 @@ void displayAdminMenu() {
 }
 
 void displayCustomerMenu() {
+    system("cls");
     cout << "\n ________________________________________ ";
     cout << "\n|           CUSTOMER MENU                |";
     cout << "\n|----------------------------------------|";
-    cout << "\n|  1. MANAGE DETAILS                     |";
-    cout << "\n|  2. PLACE ORDER                        |";
-    cout << "\n|  3. VIEW ORDER HISTORY                 |";
-    cout << "\n|  4. BACK TO MAIN MENU                  |";
+    cout << "\n|  1. LOG IN/SIGN UP AND PLACE ORDER     |";
+    cout << "\n|  2. VIEW WHAT YOU'VE ORDERED BEFORE    |";
+    cout << "\n|  3. BACK TO MAIN MENU                  |";
     cout << "\n|________________________________________|";
-    cout << "\n\nEnter your choice (1-4): ";
+    cout << "\n\nEnter your choice (1-3): ";
 }
 
 int main() {
@@ -46,12 +56,21 @@ int main() {
     while (running) {
         displayMainMenu();
         cin >> mainChoice;
+        cin.ignore();
 
         switch (mainChoice) {
-        case 1:
+        case 1: {
+           
+            if (!checkAdminPassword()) {
+                cout << "Incorrect password. Access denied.\n";
+                break;
+            }
+
             do {
                 displayAdminMenu();
                 cin >> subChoice;
+                cin.ignore(); 
+
                 switch (subChoice) {
                 case 1: cafeteria.menuManagement(); break;
                 case 2: cafeteria.customerManagement(); break;
@@ -61,30 +80,26 @@ int main() {
                 }
             } while (subChoice != 4);
             break;
+        }
 
         case 2:
             do {
                 displayCustomerMenu();
                 cin >> subChoice;
+                cin.ignore();
+
                 switch (subChoice) {
-                case 1:
-                    cafeteria.customerManagement();
-                    break;
-                case 2:
-                    cafeteria.placeOrder();
-                    break;
-                case 3:
-                    cafeteria.displayOrderHistory();
-                    break;
-                case 4: break;
+                case 1: cafeteria.placeOrder(); break;
+                case 2: cafeteria.displayOrderHistory(); break;
+                case 3: break;
                 default: cout << "Invalid choice.\n";
                 }
-            } while (subChoice != 4);
+            } while (subChoice != 3);
             break;
 
         case 3:
             running = false;
-            cout << "thank you for coming. Goodbye!\n";
+            cout << "Thank you for coming. Goodbye!\n";
             break;
 
         default:

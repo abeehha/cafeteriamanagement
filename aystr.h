@@ -43,6 +43,7 @@ public:
     char& operator[](int i);
     AYstr operator+(const AYstr& s) const;
     AYstr& operator+=(const AYstr& s);
+    AYstr& operator=(const AYstr& other);
 
     int find_first(char ch, int start_pos = 0) const;
     int find_first(const AYstr& substring, int start_pos = 0) const;
@@ -59,7 +60,7 @@ public:
     void remove_first(char ch);
     void remove_last(char ch);
     void remove_all(char ch);
-    AYstr& operator=(const AYstr& other);
+   
 };
 
 #endif

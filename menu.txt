@@ -1,0 +1,25 @@
+Vegetarian,Veggie Burger,8.99,22
+Vegetarian,Veggie Wrap,7.49,20
+Vegan,Vegan Buddha Bowl,10.99,15
+Gluten-Free,Gluten-Free Margherita Pizza,11.49,10
+Specialty,Classic Cheeseburger,9.99,9
+Drinks,Iced Latte,4.29,30
+Gluten-Free,pasta,53,9
+Vegan,biryani,100,50
+Vegetarian,Veggie Burger,8.99,22
+Vegetarian,Veggie Wrap,7.49,20
+Vegan,Vegan Buddha Bowl,10.99,15
+Gluten-Free,Gluten-Free Margherita Pizza,11.49,8
+Specialty,Classic Cheeseburger,9.99,9
+Drinks,Iced Latte,4.29,30
+Gluten-Free,pasta,53,9
+Vegan,biryani,100,50
+Gluten-Free,Stuffed Peppers,11.13,30
+Drinks,Smoothie,14.57,46
+Vegan,Lentil Soup,7.61,30
+Specialty,Double Beef Burger,7.71,39
+Specialty,BBQ Chicken Pizza,19.92,42
+Drinks,Cold Brew,17.43,29
+Vegetarian,Spinach Lasagna,19.17,36
+Vegan,Lentil Soup,12.24,14
+Drinks,Green Tea,5.27,6

@@ -3,24 +3,34 @@
 
 int Customer::idCounter = 0;
 
-
-
-Customer::Customer(const AYstr& name, const AYstr& email, const AYstr& dietaryPreference, double loyaltyPoints, int id)
-    : name(name), email(email), dietaryPreference(dietaryPreference), loyaltyPoints(loyaltyPoints) {
+Customer::Customer(const AYstr& name, const AYstr& email, const AYstr& phone,
+    const AYstr& address, const AYstr& dietaryPreference,
+    const AYstr& password, double loyaltyPoints, int id)
+{
     if (id == 0) {
         this->id = ++idCounter;
     }
     else {
         this->id = id;
-        idCounter = (idCounter > id) ? idCounter : id;
+        idCounter = (id > idCounter) ? id : idCounter;
     }
-}
 
+    this->name = name;
+    this->email = email;
+    this->phone = phone;
+    this->address = address;
+    this->dietaryPreference = dietaryPreference;
+    this->password = password;
+    this->loyaltyPoints = loyaltyPoints;
+}
 int Customer::getId() const { return id; }
 AYstr Customer::getName() const { return name; }
 AYstr Customer::getEmail() const { return email; }
 AYstr Customer::getPreference() const { return dietaryPreference; }
 double Customer::getLoyaltyPoints() const { return loyaltyPoints; }
+AYstr Customer::getPhone() const { return phone; }
+AYstr Customer::getAddress() const { return address; }
+AYstr Customer::getPassword() const { return password; }
 MyVector<AYstr> Customer::getOrderHistory() const { return orderHistory; }
 
 void Customer::addLoyaltyPoints(double points) { loyaltyPoints += points; }

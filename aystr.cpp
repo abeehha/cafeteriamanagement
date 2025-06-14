@@ -1,4 +1,6 @@
 #include "AYstr.h"
+#include <iostream>
+using namespace std;
 
 int AYstr::strlength() const {
     if (!Cs) return 0;
@@ -520,7 +522,8 @@ double AYstr::strtodouble(const char* str) const {
 }
 AYstr AYstr::substring(int start, int length) const {
     if (start < 0 || start >= len || length <= 0) {
-        throw std::out_of_range("Invalid substring parameters");
+        return AYstr(); 
+
     }
 
     int actualLength = (start + length > len) ? len - start : length;
