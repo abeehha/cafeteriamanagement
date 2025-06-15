@@ -1,6 +1,9 @@
 #include "CustomerManager.h"
+#include "CustomExceptions.h"
+
 #include <fstream>
 #include <iostream>
+using namespace std;
 
 CustomerManager::CustomerManager() {
     loadCustomersFromFile();
@@ -34,161 +37,88 @@ void CustomerManager::loadOrderHistoryFromFile() {
     orderFile.close();
 }
 void CustomerManager::registerCustomer() {
-    char name[100], email[100];
-    char phone[20], address[100], password[50];
-    int id;
-    double points;
+    char name[100], email[100], phone[20], address[100], password[50];
     int preferenceChoice;
 
-    std::cin.ignore();
-    bool validName = false;
-    do {
-
-        std::cout << "Enter customer name (minimum 2 characters): ";
-        std::cin.getline(name, 100);
-
+    try {
+        cout << "Enter customer name (minimum 2 characters): ";
+        cin.getline(name, 100);
         AYstr nameStr(name);
-        if (nameStr.strlength(nameStr.c_str()) < 2) {
-            std::cout << "Error: Name must be at least 2 characters long\n";
+        if (nameStr.strlength() < 2) {
+            throw InvalidInputException("Name must be at least 2 characters");
         }
-        else if (findCustomerByName(nameStr)) {
-            std::cout << "Error: Customer already exists with this name\n";
-            return;
+        if (findCustomerByName(nameStr)) {
+            throw InvalidInputException("Customer already exists with this name");
         }
-        else {
-            validName = true;
-        }
-    } while (!validName);
 
-    bool validEmail = false;
-    do {
-        std::cout << "Enter email address: ";
-        std::cin.getline(email, 100);
-
+        cout << "Enter email address: ";
+        cin.getline(email, 100);
         AYstr emailStr(email);
         int atPos = emailStr.find_first('@');
         int dotPos = emailStr.find_first('.', atPos + 1);
-
         if (atPos == -1 || dotPos == -1 || atPos > dotPos) {
-            std::cout << "Error: Invalid email format. Must contain '@' and '.' in correct order\n";
+            throw InvalidInputException("Invalid email format (must contain @ and .)");
         }
-        else {
-            validEmail = true;
-        }
-    } while (!validEmail);
 
-    bool validPhone = false;
-    do {
-        std::cout << "Enter phone number (11 digits, starting with 03): ";
-        std::cin.getline(phone, 20);
-
+        cout << "Enter phone number (11 digits, starting with 03): ";
+        cin.getline(phone, 20);
         AYstr phoneStr(phone);
-        if (phoneStr.strlength() != 11) {
-            std::cout << "Error: Phone number must be exactly 11 digits\n";
+        if (phoneStr.strlength() != 11 || !phoneStr.substring(0, 2).isequal("03")) {
+            throw InvalidInputException("Phone must be 11 digits starting with 03");
         }
-        else if (!phoneStr.isequal("03") && phoneStr.substring(0, 2).find_first("03") != 0) {
-            std::cout << "Error: Phone number must start with '03'\n";
-        }
-        else {
-            bool allDigits = true;
-            for (int i = 0; i < phoneStr.strlength(); i++) {
-                if (phoneStr[i] < '0' || phoneStr[i] > '9') {
-                    allDigits = false;
-                    break;
-                }
-            }
-            if (!allDigits) {
-                std::cout << "Error: Phone number must contain only digits\n";
-            }
-            else {
-                validPhone = true;
-            }
-        }
-    } while (!validPhone);
 
-    bool validAddress = false;
-    do {
-        std::cout << "Enter address (minimum 10 characters): ";
-        std::cin.getline(address, 100);
-
+        cout << "Enter address (minimum 10 characters): ";
+        cin.getline(address, 100);
         AYstr addressStr(address);
         if (addressStr.strlength() < 10) {
-            std::cout << "Error: Address must be at least 10 characters long\n";
+            throw InvalidInputException("Address must be at least 10 characters");
         }
-        else {
-            validAddress = true;
-        }
-    } while (!validAddress);
 
-    bool validPassword = false;
-    do {
-        std::cout << "Create password (8-20 characters, at least 1 uppercase, 1 lowercase, 1 digit): ";
-        std::cin.getline(password, 50);
-
+      
+        cout << "Create password (8-20 chars, 1 uppercase, 1 lowercase, 1 digit): ";
+        cin.getline(password, 50);
         AYstr passwordStr(password);
         if (passwordStr.strlength() < 8 || passwordStr.strlength() > 20) {
-            std::cout << "Error: Password must be between 8-20 characters\n";
-            continue;
+            throw InvalidInputException("Password must be 8-20 characters");
         }
 
         bool hasUpper = false, hasLower = false, hasDigit = false;
         for (int i = 0; i < passwordStr.strlength(); i++) {
-            char c = passwordStr[i];
-            if (c >= 'A' && c <= 'Z') hasUpper = true;
-            else if (c >= 'a' && c <= 'z') hasLower = true;
-            else if (c >= '0' && c <= '9') hasDigit = true;
+            if (passwordStr[i] >= 'A' && passwordStr[i] <= 'Z') hasUpper = true;
+            else if (passwordStr[i] >= 'a' && passwordStr[i] <= 'z') hasLower = true;
+            else if (passwordStr[i] >= '0' && passwordStr[i] <= '9') hasDigit = true;
+        }
+        if (!hasUpper || !hasLower || !hasDigit) {
+            throw InvalidInputException("Password requires 1 uppercase, 1 lowercase, and 1 digit");
         }
 
-        if (!hasUpper) {
-            std::cout << "Error: Password must contain at least 1 uppercase letter\n";
-        }
-        else if (!hasLower) {
-            std::cout << "Error: Password must contain at least 1 lowercase letter\n";
-        }
-        else if (!hasDigit) {
-            std::cout << "Error: Password must contain at least 1 digit\n";
-        }
-        else {
-            validPassword = true;
-        }
-    } while (!validPassword);
+        cout << "\nSelect dietary preference:\n"
+            << "1. Vegetarian\n2. Vegan\n3. Gluten-Free\n4. None\nChoice: ";
+        cin >> preferenceChoice;
+        cin.ignore();
 
-    std::cout << "\nSelect dietary preference:\n"
-        << "1. Vegetarian\n"
-        << "2. Vegan\n"
-        << "3. Gluten-Free\n"
-        << "4. None\n"
-        << "Choice: ";
-    std::cin >> preferenceChoice;
+        AYstr preference;
+        switch (preferenceChoice) {
+        case 1: preference = "Vegetarian"; break;
+        case 2: preference = "Vegan"; break;
+        case 3: preference = "Gluten-Free"; break;
+        default: preference = "None"; break;
+        }
 
-    AYstr preference;
-    switch (preferenceChoice) {
-    case 1: preference = "Vegetarian"; break;
-    case 2: preference = "Vegan"; break;
-    case 3: preference = "Gluten-Free"; break;
-    default: preference = "None"; break;
+        customers.push_back(Customer(nameStr, emailStr, phoneStr, addressStr, preference, passwordStr));
+        saveCustomerToFile(customers.back());
+
+        cout << "\nRegistration Successful!\n";
     }
-    customers.push_back(Customer(
-        AYstr(name),
-        AYstr(email),
-        AYstr(phone),
-        AYstr(address),
-        preference,
-        AYstr(password) 
-    ));
-
-    saveCustomerToFile(customers.back());
-
-    std::cout << "\nCustomer Registration Successful\n"
-        << "-------------------------\n"
-        << "ID: " << customers.back().getId() << "\n"
-        << "Name: " << name << "\n"
-        << "Email: " << email << "\n"
-        << "Preference: ";
-    preference.print();
-    std::cout << "\n";
+    catch (const InvalidInputException& e) {
+        cerr << "\nERROR: " << e.what() << "\nPlease try again.\n";
+        throw; 
+    }
+    catch (const exception& e) {
+        cerr << "\nUNEXPECTED ERROR: " << e.what() << "\n";
+        throw;
+    }
 }
-
 Customer* CustomerManager::findCustomerByName(const AYstr& name) {
     AYstr searchName = name;
     searchName.ToLower();  

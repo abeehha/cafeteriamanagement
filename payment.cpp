@@ -1,42 +1,65 @@
 #include "Payment.h"
 #include <iostream>
+#include "CustomExceptions.h"
 
 Payment::Payment(const AYstr& method, const AYstr& accNum, double amt)
     : paymentMethod(method), accountNumber(accNum), amount(amt) {
 }
 
 bool Payment::processPayment() const {
-    std::cout << "Processing payment via ";
-    paymentMethod.print();
-    std::cout << "...\n";
+    try {
+        
+        if (amount <= 0) {
+            throw PaymentException("Payment amount must be positive");
+        }
 
-    if (paymentMethod.isequal("Cash")) {
-        std::cout << "Payment of $";
-        std::cout << amount;
-        std::cout << " accepted in cash.\n";
+     
+        if (paymentMethod.isequal("Cash")) {
+            std::cout << "Processing cash payment of $" << amount << "...\n";
+            return true;
+        }
+
+        
+        if (accountNumber.strlength() == 0) {
+            throw PaymentException("Account number is required");
+        }
+
+       
+        if (paymentMethod.isequal("JazzCash") ||
+            paymentMethod.isequal("EasyPaisa") ||
+            paymentMethod.isequal("SadaPay") ||
+            paymentMethod.isequal("NayaPay")) {
+
+            if (accountNumber.strlength() != 11) {
+                throw PaymentException("Mobile account must be 11 digits");
+            }
+
+            for (int i = 0; i < accountNumber.strlength(); i++) {
+                if (accountNumber[i] < '0' || accountNumber[i] > '9') {
+                    throw PaymentException("Account number must contain only digits");
+                }
+            }
+        }
+        
+        else if (paymentMethod.isequal("Bank Transfer")) {
+            if (accountNumber.strlength() != 14) {
+                throw PaymentException("Bank account must be 14 digits");
+            }
+        }
+        std::cout << "Processing " << paymentMethod.c_str()
+            << " payment from account " << accountNumber.c_str()
+            << " for $" << amount << "...\n";
+
         return true;
     }
-    if (paymentMethod.isequal("JazzCash") || paymentMethod.isequal("EasyPaisa") ||
-        paymentMethod.isequal("SadaPay") || paymentMethod.isequal("NayaPay")) {
-        if (accountNumber.strlength() != 11) { 
-            std::cout << "Error: Mobile account number must be 11 digits.\n";
-            return false;
-        }
+    catch (const PaymentException& e) {
+        std::cerr << "PAYMENT FAILED: " << e.what() << std::endl;
+        return false;
     }
-    else if (paymentMethod.isequal("Bank Transfer")) {
-        if (accountNumber.strlength() != 14) { 
-            std::cout << "Error: Bank account number must be 14 digits.\n";
-            return false;
-        }
+    catch (const std::exception& e) {
+        std::cerr << "PAYMENT ERROR: " << e.what() << std::endl;
+        return false;
     }
-
-    std::cout << "Payment of $";
-    std::cout << amount;
-    std::cout << " from account: ";
-    accountNumber.print();
-    std::cout << " was successful!\n";
-
-    return true;
 }
 
 AYstr Payment::getPaymentMethod() const { return paymentMethod; }

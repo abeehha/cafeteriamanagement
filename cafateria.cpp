@@ -2,6 +2,7 @@
 #include "payment.h"
 #include "date.h"
 #include "salesrecord.h"
+#include "CustomExceptions.h"
 
 #include <iostream>
 #include <fstream>
@@ -131,242 +132,440 @@ void Cafeteria::displayMenu() {
     menuManager.displayCompleteMenu();
 }
 void Cafeteria::placeOrder() {
-    system("cls");
-    Customer* customer = nullptr;
-    char email[100], password[50];
-    int authChoice;
+    try {
+        Customer* customer = nullptr;
+        try {
+            char email[100], password[50], name[100], phone[20], address[100];
+            int authChoice, preferenceChoice;
 
-  
-    do {
-        cout << "\n ________________________________________ ";
-        cout << "\n|          LOGIN/SIGNUP OPTIONS           |";
-        cout << "\n|----------------------------------------|";
-        cout << "\n|  1. LOGIN                              |";
-        cout << "\n|  2. SIGNUP                             |";
-        cout << "\n|  3. BACK TO MAIN MENU                  |";
-        cout << "\n|________________________________________|";
-        cout << "\n\nEnter your choice (1-3): ";
-        cin >> authChoice;
+            cout << "\n ________________________________________\n"
+                << "|          LOGIN/SIGNUP OPTIONS          |\n"
+                << "|----------------------------------------|\n"
+                << "|  1. LOGIN                              |\n"
+                << "|  2. SIGNUP                             |\n"
+                << "|  3. BACK TO MAIN MENU                  |\n"
+                << "|________________________________________|\n"
+                << "\nEnter your choice (1-3): ";
 
-        switch (authChoice) {
-        case 1: { 
+            if (!(cin >> authChoice)) {
+                cin.clear();
+                cin.ignore(10000, '\n');
+                throw InvalidInputException("Please enter a valid number (1-3)");
+            }
             cin.ignore();
-            cout << "Enter email: ";
-            cin.getline(email, 100);
-            cout << "Enter password: ";
-            cin.getline(password, 50);
 
-            customer = customerManager.authenticateCustomer(AYstr(email), AYstr(password));
-            if (!customer) {
-                cout << "Login failed. Invalid email or password.\n";
+            switch (authChoice) {
+            case 1: {
+                bool loginSuccess = false;
+                do {
+                    try {
+                        cout << "Enter email: ";
+                        cin.getline(email, 100);
+                        cout << "Enter password: ";
+                        cin.getline(password, 50);
+
+                        customer = customerManager.authenticateCustomer(AYstr(email), AYstr(password));
+                        if (!customer) {
+                            throw AuthenticationException("Invalid email or password");
+                        }
+                        loginSuccess = true;
+                    }
+                    catch (const AuthenticationException& e) {
+                        cerr << "AUTHENTICATION ERROR: " << e.what() << endl;
+                        cout << "Would you like to try again? (y/n): ";
+                        char choice;
+                        cin >> choice;
+                        cin.ignore();
+                        if (tolower(choice) != 'y') {
+                            throw;
+                        }
+                    }
+                } while (!loginSuccess);
+                break;
             }
-            break;
+            case 2: {
+                AYstr nameStr, emailStr, phoneStr, addressStr, passwordStr, preference;
+
+                bool validName = false;
+                do {
+                    try {
+                        cout << "Enter customer name (minimum 2 characters): ";
+                        cin.getline(name, 100);
+                        nameStr = AYstr(name);
+                        if (nameStr.strlength() < 2) {
+                            throw InvalidInputException("Name must be at least 2 characters");
+                        }
+                        if (customerManager.findCustomerByName(nameStr)) {
+                            throw InvalidInputException("Customer already exists with this name");
+                        }
+                        validName = true;
+                    }
+                    catch (const InvalidInputException& e) {
+                        cerr << "ERROR: " << e.what() << endl;
+                    }
+                } while (!validName);
+
+                
+                bool validEmail = false;
+                do {
+                    try {
+                        cout << "Enter email address: ";
+                        cin.getline(email, 100);
+                        emailStr = AYstr(email);
+                        int atPos = emailStr.find_first('@');
+                        int dotPos = emailStr.find_first('.', atPos + 1);
+                        if (atPos == -1 || dotPos == -1 || atPos > dotPos) {
+                            throw InvalidInputException("Invalid email format (must contain @ and .)");
+                        }
+                        validEmail = true;
+                    }
+                    catch (const InvalidInputException& e) {
+                        cerr << "ERROR: " << e.what() << endl;
+                    }
+                } while (!validEmail);
+
+                
+                bool validPhone = false;
+                do {
+                    try {
+                        cout << "Enter phone number (11 digits, starting with 03): ";
+                        cin.getline(phone, 20);
+                        phoneStr = AYstr(phone);
+                        if (phoneStr.strlength() != 11 || !phoneStr.substring(0, 2).isequal("03")) {
+                            throw InvalidInputException("Phone must be 11 digits starting with 03");
+                        }
+                        validPhone = true;
+                    }
+                    catch (const InvalidInputException& e) {
+                        cerr << "ERROR: " << e.what() << endl;
+                    }
+                } while (!validPhone);
+
+               
+                bool validAddress = false;
+                do {
+                    try {
+                        cout << "Enter address (minimum 10 characters): ";
+                        cin.getline(address, 100);
+                        addressStr = AYstr(address);
+                        if (addressStr.strlength() < 10) {
+                            throw InvalidInputException("Address must be at least 10 characters");
+                        }
+                        validAddress = true;
+                    }
+                    catch (const InvalidInputException& e) {
+                        cerr << "ERROR: " << e.what() << endl;
+                    }
+                } while (!validAddress);
+
+               
+                bool validPassword = false;
+                do {
+                    try {
+                        cout << "Create password (8-20 chars, 1 uppercase, 1 lowercase, 1 digit): ";
+                        cin.getline(password, 50);
+                        passwordStr = AYstr(password);
+                        if (passwordStr.strlength() < 8 || passwordStr.strlength() > 20) {
+                            throw InvalidInputException("Password must be 8-20 characters");
+                        }
+
+                        bool hasUpper = false, hasLower = false, hasDigit = false;
+                        for (int i = 0; i < passwordStr.strlength(); i++) {
+                            if (passwordStr[i] >= 'A' && passwordStr[i] <= 'Z') hasUpper = true;
+                            else if (passwordStr[i] >= 'a' && passwordStr[i] <= 'z') hasLower = true;
+                            else if (passwordStr[i] >= '0' && passwordStr[i] <= '9') hasDigit = true;
+                        }
+                        if (!hasUpper || !hasLower || !hasDigit) {
+                            throw InvalidInputException("Password requires 1 uppercase, 1 lowercase, and 1 digit");
+                        }
+                        validPassword = true;
+                    }
+                    catch (const InvalidInputException& e) {
+                        cerr << "ERROR: " << e.what() << endl;
+                    }
+                } while (!validPassword);
+
+              
+                bool validPreference = false;
+                do {
+                    try {
+                        cout << "\nSelect dietary preference:\n"
+                            << "1. Vegetarian\n2. Vegan\n3. Gluten-Free\n4. None\nChoice: ";
+                        if (!(cin >> preferenceChoice)) {
+                            cin.clear();
+                            cin.ignore(10000, '\n');
+                            throw InvalidInputException("Please enter a valid number (1-4)");
+                        }
+                        cin.ignore();
+
+                        switch (preferenceChoice) {
+                        case 1: preference = "Vegetarian"; break;
+                        case 2: preference = "Vegan"; break;
+                        case 3: preference = "Gluten-Free"; break;
+                        case 4: preference = "None"; break;
+                        default:
+                            throw InvalidInputException("Invalid choice (1-4 only)");
+                        }
+                        validPreference = true;
+                    }
+                    catch (const InvalidInputException& e) {
+                        cerr << "ERROR: " << e.what() << endl;
+                    }
+                } while (!validPreference);
+
+              
+                customerManager.customers.push_back(
+                    Customer(nameStr, emailStr, phoneStr, addressStr, preference, passwordStr)
+                );
+                customerManager.saveCustomerToFile(customerManager.customers.back());
+                customer = &customerManager.customers.back();
+
+                cout << "\nRegistration Successful! You can now place your order.\n";
+                break;
+            }
+            case 3:
+                return;
+            default:
+                throw InvalidInputException("Invalid choice (1-3 only)");
+            }
         }
-        case 2: { 
-            customerManager.registerCustomer();
-            
-            cout << "\nRegistration successful! Please login to place an order.\n";
-            break;
+        catch (const AuthenticationException& e) {
+            cerr << "AUTHENTICATION ERROR: " << e.what() << endl;
+            throw;
         }
-        case 3: 
-            return;
-        default:
-            cout << "Invalid choice. Please try again.\n";
-        }
-    } while (!customer && authChoice != 3);
-
-    if (!customer) {
-        return;
-    }
-
-   
-    suggestMenuItems(*customer);
-    menuManager.displayCompleteMenu();
-
-    struct OrderedItem {
-        AYstr name;
-        int quantity;
-        double unitPrice;
-        double totalPrice;
-    };
-
-    MyVector<OrderedItem> orderedItems;
-    double orderTotal = 0.0;
-
-   
-    while (true) {
-        int choice;
-        cout << "\nSelect menu item by number (0 to finish ordering): ";
-        while (!(cin >> choice) || choice < 0 || choice > menuManager.getMenu().size()) {
-            cin.clear();
-            cin.ignore(10000, '\n');
-            cout << "Invalid choice. Please enter a number between 0 and "
-                << menuManager.getMenu().size() << ": ";
+        catch (const InvalidInputException& e) {
+            cerr << "INPUT ERROR: " << e.what() << endl;
+            throw;
         }
 
-        if (choice == 0) {
-            break;
-        }
-
-        MenuItem* selectedItem = menuManager.getMenu()[choice - 1];
-        cout << "\nSelected: ";
-        selectedItem->getName().print();
-        cout << " - $" << selectedItem->getPrice();
-        cout << " (" << selectedItem->getStock() << " available)\n";
-
-        int quantity;
-        cout << "Enter quantity: ";
-        while (!(cin >> quantity) || quantity <= 0) {
-            cin.clear();
-            cin.ignore(10000, '\n');
-            cout << "Invalid quantity. Please enter a positive number: ";
-        }
-
-        if (!selectedItem->isAvailable(quantity)) {
-            cout << "Error: Only " << selectedItem->getStock()
-                << " available. Please choose a smaller quantity.\n";
-            continue;
-        }
-
-        double customizationCost = menuManager.handleCustomizations();
-        double itemPrice = selectedItem->getPrice() + customizationCost;
-        double itemTotal = itemPrice * quantity;
-
-        OrderedItem newItem;
-        newItem.name = selectedItem->getName();
-        newItem.quantity = quantity;
-        newItem.unitPrice = itemPrice;
-        newItem.totalPrice = itemTotal;
-        orderedItems.push_back(newItem);
-
-        selectedItem->setStock(selectedItem->getStock() - quantity);
-
-        cout << "Added to order: ";
-        newItem.name.print();
-        cout << " x" << quantity << "  $" << itemPrice
-            << " = $" << itemTotal << "\n";
-    }
-
-    if (orderedItems.empty()) {
-        cout << "No items selected. Order cancelled.\n";
-        return;
-    }
-
-  
-    cout << "\n--- Order Summary ---\n";
-    cout << "Customer: ";
-    customer->getName().print();
-    cout << "\nItems:\n";
-
-    for (int i = 0; i < orderedItems.size(); ++i) {
-        cout << i + 1 << ". ";
-        orderedItems[i].name.print();
-        cout << " x" << orderedItems[i].quantity
-            << " @ $" << orderedItems[i].unitPrice
-            << " = $" << orderedItems[i].totalPrice << "\n";
-        orderTotal += orderedItems[i].totalPrice;
-    }
-
-   
-    double discount = 0.0;
-    if (customer->getLoyaltyPoints() >= 5) {
-        discount = orderTotal * 0.1;
-        cout << "Loyalty discount applied: -$" << discount << "\n";
-        customer->resetLoyaltyPoints();
-    }
-
-    double finalTotal = orderTotal - discount;
-    cout << "Subtotal: $" << orderTotal << "\n";
-    if (discount > 0) {
-        cout << "Discount: -$" << discount << "\n";
-    }
-    cout << "Total: $" << finalTotal << "\n";
-
-   
-    char confirm;
-    cout << "\nConfirm order (y/n)? ";
-    cin >> confirm;
-    cin.ignore();
-
-    if (tolower(confirm) != 'y') {
         
-        for (int i = 0; i < orderedItems.size(); ++i) {
-            for (int j = 0; j < menuManager.getMenu().size(); ++j) {
-                if (menuManager.getMenu()[j]->getName().isequal(orderedItems[i].name)) {
-                    menuManager.getMenu()[j]->setStock(
-                        menuManager.getMenu()[j]->getStock() + orderedItems[i].quantity);
-                    break;
+        suggestMenuItems(*customer);
+        menuManager.displayCompleteMenu();
+
+        struct OrderedItem {
+            AYstr name;
+            int quantity;
+            double unitPrice;
+            double totalPrice;
+        };
+
+        MyVector<OrderedItem> orderedItems;
+        double orderTotal = 0.0;
+
+        while (true) {
+            try {
+                int choice;
+                cout << "\nSelect menu item by number (0 to finish ordering): ";
+                if (!(cin >> choice)) {
+                    cin.clear();
+                    cin.ignore(10000, '\n');
+                    throw InvalidInputException("Please enter a valid number");
                 }
+
+                if (choice == 0) break;
+                if (choice < 0 || choice > menuManager.getMenu().size()) {
+                    throw InvalidInputException("Invalid item number");
+                }
+
+                MenuItem* selectedItem = menuManager.getMenu()[choice - 1];
+                cout << "\nSelected: ";
+                selectedItem->getName().print();
+                cout << " - $" << selectedItem->getPrice()
+                    << " (" << selectedItem->getStock() << " available)\n";
+
+                int quantity;
+                cout << "Enter quantity: ";
+                if (!(cin >> quantity) || quantity <= 0) {
+                    cin.clear();
+                    cin.ignore(10000, '\n');
+                    throw InvalidInputException("Quantity must be a positive number");
+                }
+
+                if (!selectedItem->isAvailable(quantity)) {
+                    throw StockException(AYstr("Only ") + AYstr(selectedItem->getStock()) +
+                        " available in stock");
+                }
+
+                double customizationCost = menuManager.handleCustomizations();
+                double itemPrice = selectedItem->getPrice() + customizationCost;
+                double itemTotal = itemPrice * quantity;
+
+                OrderedItem newItem;
+                newItem.name = selectedItem->getName();
+                newItem.quantity = quantity;
+                newItem.unitPrice = itemPrice;
+                newItem.totalPrice = itemTotal;
+                orderedItems.push_back(newItem);
+
+                selectedItem->setStock(selectedItem->getStock() - quantity);
+
+                cout << "Added to order: ";
+                newItem.name.print();
+                cout << " x" << quantity << " @ $" << itemPrice
+                    << " = $" << itemTotal << "\n";
+            }
+            catch (const StockException& e) {
+                cerr << "STOCK ERROR: " << e.what() << endl;
+            }
+            catch (const InvalidInputException& e) {
+                cerr << "INPUT ERROR: " << e.what() << endl;
             }
         }
-        cout << "Order cancelled. Stock has been restored.\n";
-        return;
-    }
 
-   
-    bool paymentSuccessful = false;
-    do {
-        Payment::displayPaymentOptions();
-        cout << "Enter payment method (1-6): ";
-        int paymentChoice;
-        cin >> paymentChoice;
+        if (orderedItems.empty()) {
+            throw OrderException("No items selected - order cancelled");
+        }
+
+        cout << "\n--- Order Summary ---\n";
+        cout << "Customer: ";
+        customer->getName().print();
+        cout << "\nItems:\n";
+
+        for (int i = 0; i < orderedItems.size(); ++i) {
+            cout << i + 1 << ". ";
+            orderedItems[i].name.print();
+            cout << " x" << orderedItems[i].quantity
+                << " @ $" << orderedItems[i].unitPrice
+                << " = $" << orderedItems[i].totalPrice << "\n";
+            orderTotal += orderedItems[i].totalPrice;
+        }
+
+        
+        double discount = 0.0;
+        if (customer->getLoyaltyPoints() >= 5) {
+            discount = orderTotal * 0.1;
+            cout << "Loyalty discount applied: -$" << discount << "\n";
+            customer->resetLoyaltyPoints();
+        }
+
+        double finalTotal = orderTotal - discount;
+        cout << "Subtotal: $" << orderTotal << "\n";
+        if (discount > 0) {
+            cout << "Discount: -$" << discount << "\n";
+        }
+        cout << "Total: $" << finalTotal << "\n";
+
+        
+        char confirm;
+        cout << "\nConfirm order (y/n)? ";
+        cin >> confirm;
         cin.ignore();
 
-        AYstr paymentMethod;
-        switch (paymentChoice) {
-        case 1: paymentMethod = "JazzCash"; break;
-        case 2: paymentMethod = "EasyPaisa"; break;
-        case 3: paymentMethod = "SadaPay"; break;
-        case 4: paymentMethod = "NayaPay"; break;
-        case 5: paymentMethod = "Bank Transfer"; break;
-        case 6: paymentMethod = "Cash"; break;
-        default:
-            cout << "Invalid payment method!\n";
-            continue;
+        if (tolower(confirm) != 'y') {
+           
+            for (int i = 0; i < orderedItems.size(); ++i) {
+                for (int j = 0; j < menuManager.getMenu().size(); ++j) {
+                    if (menuManager.getMenu()[j]->getName().isequal(orderedItems[i].name)) {
+                        menuManager.getMenu()[j]->setStock(
+                            menuManager.getMenu()[j]->getStock() + orderedItems[i].quantity);
+                        break;
+                    }
+                }
+            }
+            throw OrderException("Order cancelled by user");
         }
 
-        AYstr accountNumber;
-        if (!paymentMethod.isequal("Cash")) {
-            char accNum[20];
-            cout << "Enter account number: ";
-            cin.getline(accNum, 20);
-            accountNumber = AYstr(accNum);
+      
+        try {
+            bool paymentSuccessful = false;
+            do {
+                Payment::displayPaymentOptions();
+                cout << "Enter payment method (1-6): ";
+                int paymentChoice;
+                if (!(cin >> paymentChoice)) {
+                    cin.clear();
+                    cin.ignore(10000, '\n');
+                    throw InvalidInputException("Please enter a valid number (1-6)");
+                }
+                cin.ignore();
+
+                AYstr paymentMethod;
+                switch (paymentChoice) {
+                case 1: paymentMethod = "JazzCash"; break;
+                case 2: paymentMethod = "EasyPaisa"; break;
+                case 3: paymentMethod = "SadaPay"; break;
+                case 4: paymentMethod = "NayaPay"; break;
+                case 5: paymentMethod = "Bank Transfer"; break;
+                case 6: paymentMethod = "Cash"; break;
+                default:
+                    throw InvalidInputException("Invalid payment method (1-6 only)");
+                }
+
+                AYstr accountNumber;
+                if (!paymentMethod.isequal("Cash")) {
+                    char accNum[20];
+                    cout << "Enter account number: ";
+                    cin.getline(accNum, 20);
+                    accountNumber = AYstr(accNum);
+                }
+
+                Payment payment(paymentMethod, accountNumber, finalTotal);
+                paymentSuccessful = payment.processPayment();
+
+                if (!paymentSuccessful) {
+                    throw PaymentException("Payment failed. Please try another method");
+                }
+            } while (!paymentSuccessful);
         }
-
-        Payment payment(paymentMethod, accountNumber, finalTotal);
-        paymentSuccessful = payment.processPayment();
-
-        if (!paymentSuccessful) {
-            cout << "Payment failed. Please try another method.\n";
+        catch (const PaymentException& e) {
+           
+            for (int i = 0; i < orderedItems.size(); ++i) {
+                for (int j = 0; j < menuManager.getMenu().size(); ++j) {
+                    if (menuManager.getMenu()[j]->getName().isequal(orderedItems[i].name)) {
+                        menuManager.getMenu()[j]->setStock(
+                            menuManager.getMenu()[j]->getStock() + orderedItems[i].quantity);
+                        break;
+                    }
+                }
+            }
+            throw;
         }
-    } while (!paymentSuccessful);
-
-    for (int i = 0; i < orderedItems.size(); ++i) {
-        saveSalesRecord(orderedItems[i].name, orderedItems[i].quantity,
-            orderedItems[i].unitPrice, customer->getName());
-
-       
-        AYstr historyEntry = orderedItems[i].name + " x" + AYstr(orderedItems[i].quantity) +
-            " @ $" + AYstr(orderedItems[i].unitPrice);
-        customer->addOrderToHistory(historyEntry);
 
         
-        std::ofstream historyFile("order_history.txt", std::ios::app);
-        if (historyFile.is_open()) {
-            historyFile << customer->getId() << "," << historyEntry.c_str() << "\n";
-            historyFile.close();
+        for (int i = 0; i < orderedItems.size(); ++i) {
+            saveSalesRecord(orderedItems[i].name, orderedItems[i].quantity,
+                orderedItems[i].unitPrice, customer->getName());
+
+            AYstr historyEntry = orderedItems[i].name + " x" + AYstr(orderedItems[i].quantity) +
+                " @ $" + AYstr(orderedItems[i].unitPrice);
+            customer->addOrderToHistory(historyEntry);
+
+            try {
+                ofstream historyFile("order_history.txt", ios::app);
+                if (!historyFile.is_open()) {
+                    throw FileException("Failed to save order history");
+                }
+                historyFile << customer->getId() << "," << historyEntry.c_str() << "\n";
+                historyFile.close();
+            }
+            catch (const FileException& e) {
+                cerr << "WARNING: " << e.what() << endl;
+            }
         }
+
+      
+        int pointsEarned = static_cast<int>(finalTotal / 10);
+        customer->addLoyaltyPoints(pointsEarned);
+
+        totalSales += finalTotal;
+        try {
+            menuManager.saveMenuToFile();
+            saveSalesRecordsToFile();
+        }
+        catch (const FileException& e) {
+            cerr << "WARNING: " << e.what() << endl;
+        }
+
+        cout << "\nOrder placed successfully!\n";
+        cout << "Earned " << pointsEarned << " loyalty points.\n";
+        cout << "Total loyalty points: " << customer->getLoyaltyPoints() << "\n";
     }
-    int pointsEarned = static_cast<int>(finalTotal / 10);
-    customer->addLoyaltyPoints(pointsEarned);
-
-    totalSales += finalTotal;
-    menuManager.saveMenuToFile();
-    saveSalesRecordsToFile();
-
-    cout << "\nOrder placed successfully!\n";
-    cout << "Earned " << pointsEarned << " loyalty points.\n";
-    cout << "Total loyalty points: " << customer->getLoyaltyPoints() << "\n";
+    catch (const OrderException& e) {
+        cerr << "ORDER ERROR: " << e.what() << endl;
+    }
+    catch (const exception& e) {
+        cerr << "SYSTEM ERROR: " << e.what() << endl;
+    }
 }
 void Cafeteria::generateDailySalesReport() {
 
@@ -604,7 +803,6 @@ void Cafeteria::generatePopularItemsReport() {
 
 void Cafeteria::displayReportingOptions() {
     int choice;
-    system("cls");
     do {
         cout << "\n ________________________________________ ";
         cout << "\n|          REPORTING OPTIONS             |";
@@ -618,9 +816,9 @@ void Cafeteria::displayReportingOptions() {
         std::cin >> choice;
 
         switch (choice) {
-        case 1: generateDailySalesReport(); break;
-        case 2: generateMonthlySalesReport(); break;
-        case 3: generatePopularItemsReport(); break;
+        case 1: generateDailySalesReport(); break; system("cls");
+        case 2: generateMonthlySalesReport(); break; system("cls");
+        case 3: generatePopularItemsReport(); break; system("cls");
         case 4: break;
         default: std::cout << "Invalid choice!\n";
         }
@@ -642,8 +840,9 @@ void Cafeteria::displayOrderHistory() {
     customerManager.displayOrderHistory();
 }
 void Cafeteria::customerManagement() {
-    int choice;
     system("cls");
+    int choice;
+   
     do {
         cout << "\n ________________________________________ ";
         cout << "\n|       CUSTOMER MANAGEMENT SYSTEM       |";

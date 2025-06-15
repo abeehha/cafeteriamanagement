@@ -19,7 +19,7 @@ Drinks,Smoothie,14.57,46
 Vegan,Lentil Soup,7.61,30
 Specialty,Double Beef Burger,7.71,39
 Specialty,BBQ Chicken Pizza,19.92,42
-Drinks,Cold Brew,17.43,29
+Drinks,Cold Brew,17.43,28
 Vegetarian,Spinach Lasagna,19.17,36
 Vegan,Lentil Soup,12.24,14
 Drinks,Green Tea,5.27,6

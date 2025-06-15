@@ -1,4 +1,5 @@
 #include "MenuManager.h"
+#include "CustomExceptions.h"
 #include <fstream>
 #include <iostream>
 using namespace std;
@@ -112,57 +113,68 @@ void MenuManager::initializeDefaultMenu() {
 void MenuManager::addMenuItem() {
     char name[100];
     double price;
-    int stock;
-    int categoryChoice;
+    int stock, categoryChoice;
 
-    std::cout << "\n--- Add New Menu Item ---\n";
-    std::cout << "Enter item name: ";
-    std::cin.ignore();
-    std::cin.getline(name, 100);
-    AYstr itemName(name);
+    try {
+        cout << "\n--- Add New Menu Item ---\n";
 
-    std::cout << "Enter item price: ";
-    while (!(std::cin >> price) || price <= 0) {
-        std::cin.clear();
-        std::cin.ignore();
-        std::cout << "Invalid price. Please enter a positive number: ";
-    }
+        cout << "Enter item name: ";
+        cin.ignore();
+        cin.getline(name, 100);
+        AYstr itemName(name);
+        if (itemName.strlength() == 0) {
+            throw InvalidInputException("Item name cannot be empty");
+        }
 
-    std::cout << "Enter item stock: ";
-    while (!(std::cin >> stock) || stock <= 0) {
-        std::cin.clear();
-        std::cin.ignore();
-        std::cout << "Invalid stock. Please enter valid stock amount: ";
-    }
+        cout << "Enter item price: ";
+        if (!(cin >> price) || price <= 0) {
+            cin.clear();
+            cin.ignore(10000, '\n');
+            throw InvalidInputException("Price must be a positive number");
+        }
 
-    std::cout << "Select category:\n"
-        << "1. Vegetarian\n"
-        << "2. Vegan\n"
-        << "3. Gluten-Free\n"
-        << "4. Specialty\n"
-        << "5. Drinks\n"
-        << "Choice: ";
-    std::cin >> categoryChoice;
+        cout << "Enter item stock: ";
+        if (!(cin >> stock) || stock < 0) {
+            cin.clear();
+            cin.ignore(10000, '\n');
+            throw InvalidInputException("Stock must be a non-negative integer");
+        }
 
-    MenuItem* newItem = nullptr;
-    switch (categoryChoice) {
-    case 1: newItem = new VegetarianMenuItem(itemName, price, stock); break;
-    case 2: newItem = new VeganMenuItem(itemName, price, stock); break;
-    case 3: newItem = new GlutenFreeMenuItem(itemName, price, stock); break;
-    case 4: newItem = new SpecialtyMenuItem(itemName, price, stock); break;
-    case 5: newItem = new DrinkMenuItem(itemName, price, stock); break;
-    default:
-        std::cout << "Invalid category selection.\n";
-        return;
-    }
+        cout << "Select category:\n"
+            << "1. Vegetarian\n2. Vegan\n3. Gluten-Free\n4. Specialty\n5. Drinks\n"
+            << "Choice: ";
+        if (!(cin >> categoryChoice) || categoryChoice < 1 || categoryChoice > 5) {
+            cin.clear();
+            cin.ignore(10000, '\n');
+            throw InvalidInputException("Invalid category selection (1-5)");
+        }
 
-    if (newItem) {
+        MenuItem* newItem = nullptr;
+        switch (categoryChoice) {
+        case 1: newItem = new VegetarianMenuItem(itemName, price, stock); break;
+        case 2: newItem = new VeganMenuItem(itemName, price, stock); break;
+        case 3: newItem = new GlutenFreeMenuItem(itemName, price, stock); break;
+        case 4: newItem = new SpecialtyMenuItem(itemName, price, stock); break;
+        case 5: newItem = new DrinkMenuItem(itemName, price, stock); break;
+        }
+
+        if (!newItem) {
+            throw runtime_error("Failed to create menu item");
+        }
+
         menu.push_back(newItem);
-        std::cout << "\nItem added successfully!\n";
         saveMenuToFile();
+        cout << "\nItem added successfully!\n";
+    }
+    catch (const InvalidInputException& e) {
+        cerr << "ERROR: " << e.what() << endl;
+        throw;
+    }
+    catch (const exception& e) {
+        cerr << "ERROR: Failed to add menu item - " << e.what() << endl;
+        throw;
     }
 }
-
 void MenuManager::removeMenuItem() {
     if (menu.empty()) {
         std::cout << "Menu is empty.\n";
