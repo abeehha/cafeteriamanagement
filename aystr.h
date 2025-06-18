@@ -15,7 +15,7 @@ public:
     void inttostr(int num, char* buffer);
     int strtoint(const char* str) const;
     double strtodouble(const char* str) const;
-    const char* c_str() const { return Cs; }
+    const char* c_str() const;
 
     AYstr();
     AYstr(const char* p);

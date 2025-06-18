@@ -263,7 +263,12 @@ void Cafeteria::placeOrder() {
                 do {
                     try {
                         cout << "Create password (8-20 chars, 1 uppercase, 1 lowercase, 1 digit): ";
-                        cin.getline(password, 50);
+                        if (!cin.getline(password, 50)) {  
+                            cin.clear();  
+                            cin.ignore(numeric_limits<streamsize>::max(), '\n');  
+                            throw InvalidInputException("Invalid input");
+                        }
+
                         passwordStr = AYstr(password);
                         if (passwordStr.strlength() < 8 || passwordStr.strlength() > 20) {
                             throw InvalidInputException("Password must be 8-20 characters");
@@ -284,7 +289,6 @@ void Cafeteria::placeOrder() {
                         cerr << "ERROR: " << e.what() << endl;
                     }
                 } while (!validPassword);
-
               
                 bool validPreference = false;
                 do {

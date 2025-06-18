@@ -575,3 +575,6 @@ AYstr& AYstr::operator=(const AYstr& other) {
     }
     return *this;
 }
+const char* AYstr::c_str() const { 
+    return Cs;
+}

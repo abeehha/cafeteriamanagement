@@ -2,6 +2,7 @@
 #include "CustomExceptions.h"
 #include "Windows.h"
 #include <iostream>
+#include "Logger.h"
 #include <limits>
 
 using namespace std;
@@ -67,10 +68,11 @@ void ResetColor() {
     SetColor(0, 7);
 }
 
-
 int main() {
     SetColor(0,6);
+    Logger::getInstance().initialize("log.txt");
     Cafeteria cafeteria;
+    Logger::getInstance().writeMessage("cafeteria class made");
     int mainChoice = 0;
     bool running = true;
 
@@ -79,7 +81,7 @@ int main() {
             try {
                 
                 displayMainMenu();
-
+                Logger::getInstance().writeMessage("main menu shown");
                 if (!(cin >> mainChoice)) {
                     cin.clear();
                     cin.ignore();
@@ -92,13 +94,16 @@ int main() {
                     system("cls");
                     try {
                         if (!checkAdminPassword()) {
+                            Logger::getInstance().writeMessage("admin password wrong");
                             throw AuthenticationException("Access denied");
+                           
                         }
 
                         int adminChoice = 0;
                         do {
                             try {
                                 displayAdminMenu();
+                                Logger::getInstance().writeMessage("admin menu shown");
 
                                 if (!(cin >> adminChoice)) {
                                     cin.clear();
@@ -110,20 +115,24 @@ int main() {
                                 switch (adminChoice) {
                                 case 1:
                                     cafeteria.menuManagement();
+                                    Logger::getInstance().writeMessage("doing menu management");
                                     break;
                                     system("cls");
                                 case 2:
                                     cafeteria.customerManagement();
+                                    Logger::getInstance().writeMessage("doing customer management");
                                     break;
                                     system("cls");
                                 case 3:
                                     cafeteria.displayReportingOptions();
+                                    Logger::getInstance().writeMessage("showing reports");
                                     break;
                                     system("cls");
                                 case 4:
                                     break;
                                 default:
                                     throw InvalidInputException("Invalid choice (1-4 only)");
+                                    Logger::getInstance().writeMessage("invalid choice made");
                                 }
                             }
                             catch (const InvalidInputException& e) {
@@ -154,7 +163,7 @@ int main() {
                     do {
                         try {
                             displayCustomerMenu();
-
+                            Logger::getInstance().writeMessage("customer menu shown");
                             if (!(cin >> customerChoice)) {
                                 cin.clear();
                                 cin.ignore();
@@ -165,10 +174,12 @@ int main() {
                             switch (customerChoice) {
                             case 1:
                                 cafeteria.placeOrder();
+                                Logger::getInstance().writeMessage("placing order");
                                 break;
                                 system("cls");
                             case 2:
                                 cafeteria.displayOrderHistory();
+                                Logger::getInstance().writeMessage("displaying history");
                                 break;
                                 system("cls");
                             case 3:
@@ -201,6 +212,7 @@ int main() {
                     
                     running = false;
                     cout << "Thank you for coming. Goodbye!\n";
+                    Logger::getInstance().writeMessage("exit choice");
                     break;
                     system("cls");
 
@@ -238,5 +250,6 @@ int main() {
     }
 
     ResetColor();
+    Logger::getInstance().writeMessage("code ending");
     return 0;
 }

@@ -1,4 +1,4 @@
-Vegetarian,Veggie Burger,8.99,22
+Vegetarian,Veggie Burger,8.99,21
 Vegetarian,Veggie Wrap,7.49,20
 Vegan,Vegan Buddha Bowl,10.99,15
 Gluten-Free,Gluten-Free Margherita Pizza,11.49,10
@@ -23,3 +23,4 @@ Drinks,Cold Brew,17.43,28
 Vegetarian,Spinach Lasagna,19.17,36
 Vegan,Lentil Soup,12.24,14
 Drinks,Green Tea,5.27,6
+Gluten-Free,pasta,23,12

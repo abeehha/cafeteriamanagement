@@ -12,3 +12,4 @@
 14-6-2025,Double Beef Burger,1,7.71,abeeha
 14-6-2025,Gluten-Free Margherita Pizza,1,11.99,abeeha
 15-6-2025,Cold Brew,1,17.63,oop
+17-6-2025,Veggie Burger,1,8.99,abeeha
